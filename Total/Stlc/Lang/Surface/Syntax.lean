@@ -154,39 +154,28 @@ namespace Total.Stlc.Lang.Surface
 
     section Arithmetic
       scoped syntax:60 stlc_surface_tm:60 "+" stlc_surface_tm:61 : stlc_surface_tm
-      scoped syntax:60 stlc_surface_tm:60 "-" stlc_surface_tm:61 : stlc_surface_tm
       scoped syntax:70 stlc_surface_tm:70 "*" stlc_surface_tm:71 : stlc_surface_tm
 
       macro_rules
         | `([Term| $lhs:stlc_surface_tm + $rhs:stlc_surface_tm ]) => `(Term.add [Term| $lhs] [Term| $rhs])
-        | `([Term| $lhs:stlc_surface_tm - $rhs:stlc_surface_tm ]) => `(Term.sub [Term| $lhs] [Term| $rhs])
         | `([Term| $lhs:stlc_surface_tm * $rhs:stlc_surface_tm ]) => `(Term.mul [Term| $lhs] [Term| $rhs])
 
       variable {lhs rhs t₁ t₂ t₃ t₄: Term}
 
       example: [Term| ‹lhs› + ‹rhs›] = .add lhs rhs := rfl
-      example: [Term| ‹lhs› - ‹rhs›] = .sub lhs rhs := rfl
       example: [Term| ‹lhs› * ‹rhs›] = .mul lhs rhs := rfl
 
       example: [Term| ‹t₁› + ‹t₂› + ‹t₃›]   = .add (.add t₁ t₂) t₃ := rfl
       example: [Term| (‹t₁› + ‹t₂›) + ‹t₃›] = .add (.add t₁ t₂) t₃ := rfl
       example: [Term| ‹t₁› + (‹t₂› + ‹t₃›)] = .add t₁ (.add t₂ t₃) := rfl
-      example: [Term| ‹t₁› - ‹t₂› - ‹t₃›]   = .sub (.sub t₁ t₂) t₃ := rfl
-      example: [Term| (‹t₁› - ‹t₂›) - ‹t₃›] = .sub (.sub t₁ t₂) t₃ := rfl
-      example: [Term| ‹t₁› - (‹t₂› - ‹t₃›)] = .sub t₁ (.sub t₂ t₃) := rfl
       example: [Term| ‹t₁› * ‹t₂› * ‹t₃›]   = .mul (.mul t₁ t₂) t₃ := rfl
       example: [Term| (‹t₁› * ‹t₂›) * ‹t₃›] = .mul (.mul t₁ t₂) t₃ := rfl
       example: [Term| ‹t₁› * (‹t₂› * ‹t₃›)] = .mul t₁ (.mul t₂ t₃) := rfl
 
-      example: [Term| ‹t₁› + ‹t₂› - ‹t₃›] = .sub (.add t₁ t₂) t₃ := rfl
-      example: [Term| ‹t₁› - ‹t₂› + ‹t₃›] = .add (.sub t₁ t₂) t₃ := rfl
       example: [Term| ‹t₁› + ‹t₂› * ‹t₃›] = .add t₁ (.mul t₂ t₃) := rfl
       example: [Term| ‹t₁› * ‹t₂› + ‹t₃›] = .add (.mul t₁ t₂) t₃ := rfl
-      example: [Term| ‹t₁› - ‹t₂› * ‹t₃›] = .sub t₁ (.mul t₂ t₃) := rfl
-      example: [Term| ‹t₁› * ‹t₂› - ‹t₃›] = .sub (.mul t₁ t₂) t₃ := rfl
 
       example: [Term| ‹t₁› * ‹t₂› + ‹t₃› * ‹t₄›] = .add (.mul t₁ t₂) (.mul t₃ t₄) := rfl
-      example: [Term| ‹t₁› + ‹t₂› * ‹t₃› - ‹t₄›] = .sub (.add t₁ (.mul t₂ t₃)) t₄ := rfl
     end Arithmetic
 
     section Comparison

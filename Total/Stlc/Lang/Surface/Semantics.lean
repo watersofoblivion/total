@@ -14,29 +14,28 @@ namespace Total.Stlc.Lang.Surface
       -- | var (id: String): IsValue (.var id)
       -- | abs (params: List (String × Ty)) (body: Term): IsValue (.abs params body)
 
-    inductive HasType: Env → Term → Ty → Prop where
-      | bool {ε: Env} {b: Bool}: HasType ε [Term| ‹bool:b›] [Ty| 𝔹]
-      | nat {ε: Env} {n: Nat}: HasType ε [Term| ‹nat:n›] [Ty| ℕ]
-      | and {ε: Env} {lhs rhs: Term} (h₁: HasType ε lhs [Ty| 𝔹]) (h₂: HasType ε rhs [Ty| 𝔹]): HasType ε [Term| ‹lhs› ∧ ‹rhs›] [Ty| 𝔹]
-      | or  {ε: Env} {lhs rhs: Term} (h₁: HasType ε lhs [Ty| 𝔹]) (h₂: HasType ε rhs [Ty| 𝔹]): HasType ε [Term| ‹lhs› ∨ ‹rhs›] [Ty| 𝔹]
-      | not {ε: Env} {op: Term} (h: HasType ε op [Ty| 𝔹]): HasType ε [Term| ¬ ‹op›] [Ty| 𝔹]
-      | add {ε: Env} {lhs rhs: Term} (h₁: HasType ε lhs [Ty| ℕ]) (h₂: HasType ε rhs [Ty| ℕ]): HasType ε [Term| ‹lhs› + ‹rhs›] [Ty| ℕ]
-      | sub {ε: Env} {lhs rhs: Term} (h₁: HasType ε lhs [Ty| ℕ]) (h₂: HasType ε rhs [Ty| ℕ]): HasType ε [Term| ‹lhs› - ‹rhs›] [Ty| ℕ]
-      | mul {ε: Env} {lhs rhs: Term} (h₁: HasType ε lhs [Ty| ℕ]) (h₂: HasType ε rhs [Ty| ℕ]): HasType ε [Term| ‹lhs› * ‹rhs›] [Ty| ℕ]
-      | eq  {ε: Env} {lhs rhs: Term} {τ: Ty} (h₁: HasType ε lhs τ) (h₂: HasType ε rhs τ): HasType ε [Term| ‹lhs› = ‹rhs›] [Ty| 𝔹]
-      | neq {ε: Env} {lhs rhs: Term} {τ: Ty} (h₁: HasType ε lhs τ) (h₂: HasType ε rhs τ): HasType ε [Term| ‹lhs› ≠ ‹rhs›] [Ty| 𝔹]
-      | lt  {ε: Env} {lhs rhs: Term} (h₁: HasType ε lhs [Ty| ℕ]) (h₂: HasType ε rhs [Ty| ℕ]): HasType ε [Term| ‹lhs› < ‹rhs›] [Ty| 𝔹]
-      | lte {ε: Env} {lhs rhs: Term} (h₁: HasType ε lhs [Ty| ℕ]) (h₂: HasType ε rhs [Ty| ℕ]): HasType ε [Term| ‹lhs› ≤ ‹rhs›] [Ty| 𝔹]
-      | gt  {ε: Env} {lhs rhs: Term} (h₁: HasType ε lhs [Ty| ℕ]) (h₂: HasType ε rhs [Ty| ℕ]): HasType ε [Term| ‹lhs› < ‹rhs›] [Ty| 𝔹]
-      | gte {ε: Env} {lhs rhs: Term} (h₁: HasType ε lhs [Ty| ℕ]) (h₂: HasType ε rhs [Ty| ℕ]): HasType ε [Term| ‹lhs› ≤ ‹rhs›] [Ty| 𝔹]
-      | cond {ε: Env} {c t f: Term} {τ: Ty} (h₁: HasType ε c [Ty| 𝔹]) (h₂: HasType ε t τ) (h₃: HasType ε f τ): HasType ε [Term| if ‹c› then ‹t› else ‹f›] τ
-      -- | var  {ε: Env} {τ: Ty}: HasType ε _ τ
-      -- | bind {ε: Env} {expr scope: Term} {τ₁ τ₂: Ty} (h₁: HasType ε expr τ₁) (h₂: HasType (ε.bind ι τ₁) scope τ₂): HasType ε (.bind t₁ expr scope) τ₂
+    inductive HasType: Term → Ty → Prop where
+      | bool {b: Bool}: HasType [Term| ‹bool:b›] [Ty| 𝔹]
+      | nat {n: Nat}: HasType [Term| ‹nat:n›] [Ty| ℕ]
+      | and {lhs rhs: Term} (h₁: HasType lhs [Ty| 𝔹]) (h₂: HasType rhs [Ty| 𝔹]): HasType [Term| ‹lhs› ∧ ‹rhs›] [Ty| 𝔹]
+      | or  {lhs rhs: Term} (h₁: HasType lhs [Ty| 𝔹]) (h₂: HasType rhs [Ty| 𝔹]): HasType [Term| ‹lhs› ∨ ‹rhs›] [Ty| 𝔹]
+      | not {op: Term} (h: HasType op [Ty| 𝔹]): HasType [Term| ¬ ‹op›] [Ty| 𝔹]
+      | add {lhs rhs: Term} (h₁: HasType lhs [Ty| ℕ]) (h₂: HasType rhs [Ty| ℕ]): HasType [Term| ‹lhs› + ‹rhs›] [Ty| ℕ]
+      | mul {lhs rhs: Term} (h₁: HasType lhs [Ty| ℕ]) (h₂: HasType rhs [Ty| ℕ]): HasType [Term| ‹lhs› * ‹rhs›] [Ty| ℕ]
+      | eq  {lhs rhs: Term} {τ: Ty} (h₁: HasType lhs τ) (h₂: HasType rhs τ): HasType [Term| ‹lhs› = ‹rhs›] [Ty| 𝔹]
+      | neq {lhs rhs: Term} {τ: Ty} (h₁: HasType lhs τ) (h₂: HasType rhs τ): HasType [Term| ‹lhs› ≠ ‹rhs›] [Ty| 𝔹]
+      | lt  {lhs rhs: Term} (h₁: HasType lhs [Ty| ℕ]) (h₂: HasType rhs [Ty| ℕ]): HasType [Term| ‹lhs› < ‹rhs›] [Ty| 𝔹]
+      | lte {lhs rhs: Term} (h₁: HasType lhs [Ty| ℕ]) (h₂: HasType rhs [Ty| ℕ]): HasType [Term| ‹lhs› ≤ ‹rhs›] [Ty| 𝔹]
+      | gt  {lhs rhs: Term} (h₁: HasType lhs [Ty| ℕ]) (h₂: HasType rhs [Ty| ℕ]): HasType [Term| ‹lhs› < ‹rhs›] [Ty| 𝔹]
+      | gte {lhs rhs: Term} (h₁: HasType lhs [Ty| ℕ]) (h₂: HasType rhs [Ty| ℕ]): HasType [Term| ‹lhs› ≤ ‹rhs›] [Ty| 𝔹]
+      | cond {c t f: Term} {τ: Ty} (h₁: HasType c [Ty| 𝔹]) (h₂: HasType t τ) (h₃: HasType f τ): HasType [Term| if ‹c› then ‹t› else ‹f›] τ
+      -- | var  {τ: Ty}: HasType _ τ
+      -- | bind {expr scope: Term} {τ₁ τ₂: Ty} (h₁: HasType expr τ₁) (h₂: HasType (ε.bind ι τ₁) scope τ₂): HasType (.bind t₁ expr scope) τ₂
       -- TODO: Turn List.{foldl,map} applications into functions on FormalList
-      -- | abs {ε: Env} {formals: FormalList} {body: Term} {τ: Ty} (h: HasType (List.foldl (fun ε (ι, τ) => ε.bind ι τ) ε formals) body τ): HasType ε (.abs formals body) (.fn (List.map (·.snd) formals) τ)
+      -- | abs {formals: FormalList} {body: Term} {τ: Ty} (h: HasType (List.foldl (fun ε (ι, τ) => ε.bind ι τ) ε formals) body τ): HasType (.abs formals body) (.fn (List.map (·.snd) formals) τ)
       -- TODO: Turn List.{foldl,zip} applications into functions on FormalList
       -- ERROR: Free Variable Somewhere?!?!
-      -- | app {ε: Env} {params: ParamList} {res: Ty} {fn: Term} {args: ArgList} (h₁: HasType ε fn (.fn params res)) (h₂: List.foldl (fun p (t, τ) => p ∧ HasType ε t τ) true (List.zip args params)): HasType ε (.app fn args) res
+      -- | app {params: ParamList} {res: Ty} {fn: Term} {args: ArgList} (h₁: HasType fn (.fn params res)) (h₂: List.foldl (fun p (t, τ) => p ∧ HasType t τ) true (List.zip args params)): HasType (.app fn args) res
 
     inductive Eval₁: Term → Term → Prop where
       | and {lhs rhs: Bool}: Eval₁ [Term| ‹bool:lhs› ∧ ‹bool:rhs›] [Term| ‹bool:lhs && rhs›]
@@ -53,10 +52,6 @@ namespace Total.Stlc.Lang.Surface
       | add {lhs rhs: Nat}: Eval₁ [Term| ‹nat:lhs› + ‹nat:rhs›] [Term| ‹nat:lhs + rhs›]
       | addRight {lhs rhs₁ rhs₂: Term} (h₁: IsValue lhs) (h₂: Eval₁ rhs₁ rhs₂): Eval₁ [Term| ‹lhs› + ‹rhs₁›] [Term| ‹lhs› + ‹rhs₂›]
       | addLeft {lhs₁ lhs₂ rhs: Term} (h: Eval₁ lhs₁ lhs₂): Eval₁ [Term| ‹lhs₁› + ‹rhs›] [Term| ‹lhs₂› + ‹rhs›]
-
-      | sub {lhs rhs: Nat}: Eval₁ [Term| ‹nat:lhs› - ‹nat:rhs›] [Term| ‹nat:lhs - rhs›]
-      | subRight {lhs rhs₁ rhs₂: Term} (h₁: IsValue lhs) (h₂: Eval₁ rhs₁ rhs₂): Eval₁ [Term| ‹lhs› - ‹rhs₁›] [Term| ‹lhs› - ‹rhs₂›]
-      | subLeft {lhs₁ lhs₂ rhs: Term} (h: Eval₁ lhs₁ lhs₂): Eval₁ [Term| ‹lhs₁› - ‹rhs›] [Term| ‹lhs₂› - ‹rhs›]
 
       | mul {lhs rhs: Nat}: Eval₁ [Term| ‹nat:lhs› * ‹nat:rhs›] [Term| ‹nat:lhs * rhs›]
       | mulRight {lhs rhs₁ rhs₂: Term} (h₁: IsValue lhs) (h₂: Eval₁ rhs₁ rhs₂): Eval₁ [Term| ‹lhs› * ‹rhs₁›] [Term| ‹lhs› * ‹rhs₂›]

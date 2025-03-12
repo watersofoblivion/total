@@ -1,10 +1,8 @@
 namespace Total.Stlc.Lang.Surface
-  mutual
-    inductive Ty: Type where
-      | bool: Ty
-      | nat: Ty
-      -- | fn (dom: List Ty) (rng: Ty): Ty
-  end
+  inductive Ty: Type where
+    | bool: Ty
+    | nat: Ty
+    -- | fn (dom: List Ty) (rng: Ty): Ty
 
   inductive Term: Type where
     | bool (b: Bool): Term
@@ -13,7 +11,6 @@ namespace Total.Stlc.Lang.Surface
     | or (lhs rhs: Term): Term
     | not (op: Term): Term
     | add (lhs rhs: Term): Term
-    | sub (lhs rhs: Term): Term
     | mul (lhs rhs: Term): Term
     | eq (lhs rhs: Term): Term
     | neq (lhs rhs: Term): Term
