@@ -26,8 +26,8 @@ namespace Total.Stlc.Lang.Surface
       | neq {lhs rhs: Term} {τ: Ty} (h₁: HasType lhs τ) (h₂: HasType rhs τ): HasType [Term| ‹lhs› ≠ ‹rhs›] [Ty| 𝔹]
       | lt  {lhs rhs: Term} (h₁: HasType lhs [Ty| ℕ]) (h₂: HasType rhs [Ty| ℕ]): HasType [Term| ‹lhs› < ‹rhs›] [Ty| 𝔹]
       | lte {lhs rhs: Term} (h₁: HasType lhs [Ty| ℕ]) (h₂: HasType rhs [Ty| ℕ]): HasType [Term| ‹lhs› ≤ ‹rhs›] [Ty| 𝔹]
-      | gt  {lhs rhs: Term} (h₁: HasType lhs [Ty| ℕ]) (h₂: HasType rhs [Ty| ℕ]): HasType [Term| ‹lhs› < ‹rhs›] [Ty| 𝔹]
-      | gte {lhs rhs: Term} (h₁: HasType lhs [Ty| ℕ]) (h₂: HasType rhs [Ty| ℕ]): HasType [Term| ‹lhs› ≤ ‹rhs›] [Ty| 𝔹]
+      | gt  {lhs rhs: Term} (h₁: HasType lhs [Ty| ℕ]) (h₂: HasType rhs [Ty| ℕ]): HasType [Term| ‹lhs› > ‹rhs›] [Ty| 𝔹]
+      | gte {lhs rhs: Term} (h₁: HasType lhs [Ty| ℕ]) (h₂: HasType rhs [Ty| ℕ]): HasType [Term| ‹lhs› ≥ ‹rhs›] [Ty| 𝔹]
       | cond {c t f: Term} {τ: Ty} (h₁: HasType c [Ty| 𝔹]) (h₂: HasType t τ) (h₃: HasType f τ): HasType [Term| if ‹c› then ‹t› else ‹f›] τ
       -- | var  {τ: Ty}: HasType _ τ
       -- | bind {expr scope: Term} {τ₁ τ₂: Ty} (h₁: HasType expr τ₁) (h₂: HasType (ε.bind ι τ₁) scope τ₂): HasType (.bind t₁ expr scope) τ₂
@@ -47,7 +47,7 @@ namespace Total.Stlc.Lang.Surface
       | orLeft {lhs₁ lhs₂ rhs: Term} (h: Eval₁ lhs₁ lhs₂): Eval₁ [Term| ‹lhs₁› ∨ ‹rhs›] [Term| ‹lhs₂› ∨ ‹rhs›]
 
       | not {op: Bool}: Eval₁ [Term| ¬ ‹bool:op›] [Term| ‹bool:!op›]
-      | notOp {op₁ op₂: Term} (h: Eval₁ op₁ op₂): Eval₁ [Term| ¬ ‹op₁›] [Term| ‹op₂›]
+      | notOp {op₁ op₂: Term} (h: Eval₁ op₁ op₂): Eval₁ [Term| ¬‹op₁›] [Term| ‹op₂›]
 
       | add {lhs rhs: Nat}: Eval₁ [Term| ‹nat:lhs› + ‹nat:rhs›] [Term| ‹nat:lhs + rhs›]
       | addRight {lhs rhs₁ rhs₂: Term} (h₁: IsValue lhs) (h₂: Eval₁ rhs₁ rhs₂): Eval₁ [Term| ‹lhs› + ‹rhs₁›] [Term| ‹lhs› + ‹rhs₂›]
@@ -84,7 +84,7 @@ namespace Total.Stlc.Lang.Surface
       | gteLeft {lhs₁ lhs₂ rhs: Term} (h: Eval₁ lhs₁ lhs₂): Eval₁ [Term| ‹lhs₁› ≥ ‹rhs›] [Term| ‹lhs₂› ≥ ‹rhs›]
 
       | condTrue {t f: Term}: Eval₁ [Term| if tru then ‹t› else ‹f›] [Term| ‹t›]
-      | contFalse {t f: Term}: Eval₁ [Term| if fls then ‹t› else ‹f›] [Term| ‹f›]
+      | condFalse {t f: Term}: Eval₁ [Term| if fls then ‹t› else ‹f›] [Term| ‹f›]
       | cond {c₁ c₂ t f: Term} (h: Eval₁ c₁ c₂): Eval₁ [Term| if ‹c₁› then ‹t› else ‹f›] [Term| if ‹c₂› then ‹t› else ‹f›]
 
       -- | bind {ι: String} {τy: Ty} {expr: Term} {scope: Term} (h: IsValue expr): Eval₁ (.bind ι τ expr scope) ([ι ↦  expr] scope)
