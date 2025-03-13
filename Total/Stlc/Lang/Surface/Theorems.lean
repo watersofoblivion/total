@@ -107,8 +107,13 @@ namespace Total.Stlc.Lang.Surface
       theorem deterministic {t: Term} {τ₁ τ₂: Ty}: HasType t τ₁ → HasType t τ₂ → τ₁ = τ₂
         | .bool,          .bool
         | .nat,           .nat           => rfl
-        | .unOp  op₁ _,   .unOp  op₂ _   => UnOp.HasType.deterministic op₁ op₂
-        | .binOp op₁ _ _, .binOp op₂ _ _ => BinOp.HasType.deterministic op₁ op₂
+        | .unOp op₁ operand₁, .unOp op₂ operand₂   =>
+          have ih := deterministic operand₁ operand₂
+          UnOp.HasType.deterministic op₁ (sorry)
+        | .binOp op₁ lhs₁ lhs₂, .binOp op₂ rhs₁ rhs₂ =>
+          let ih₁ := deterministic lhs₁ rhs₁
+          let ih₂ := deterministic lhs₂ rhs₂
+          BinOp.HasType.deterministic op₁ (sorry)
         | .cond _ t₁ _,   .cond _ t₂ _   => by rw [deterministic t₁ t₂]
     end HasType
 
@@ -183,20 +188,22 @@ namespace Total.Stlc.Lang.Surface
         | .nat, .refl          => .nat
         | .nat, .trans hxy hyz => sorry
 
+        | .unOp op operand, .refl => .unOp op (preservation operand .refl)
+        | .unOp op _, .trans (.unOp _ operand) hyz => sorry
+        | .unOp op _, .trans (.unOpOp he)      hyz => sorry
 
-        | .unOp op, .refl => .unOp (preservation op .refl)
-        -- | .unOp op, .trans .not        hyz => sorry
-        -- | .unOp op, .trans (.unOpOp he) hyz => sorry
-
-        | .binOp lhs rhs, .refl               => .binOp (preservation lhs .refl) (preservation rhs .refl)
-        | .binOp lhs rhs, .trans .binOp .refl =>
+        | .binOp op lhs rhs, .refl                       => .binOp op (preservation lhs .refl) (preservation rhs .refl)
+        | .binOp op lhs rhs, .trans (.binOp o l r) .refl =>
+          have ih := BinOp.Eval₁.preservation op _
           have ih₁ := preservation lhs .refl
           have ih₂ := preservation rhs .refl
-          sorry
-        | .binOp lhs rhs, .trans (.binOpRight hv he) hyz   =>
+          .binOp ih ih₁ ih₂
+        | .binOp op lhs rhs, .trans (.binOpRight hv he) hyz   =>
+          have h := BinOp.Eval₁.preservation op _
           have ih := preservation (Eval₁.preservation rhs he) (.trans he hyz)
           sorry
-        | .binOp lhs rhs, .trans (.binOpLeft he)     hyz   =>
+        | .binOp op lhs rhs, .trans (.binOpLeft he)     hyz   =>
+          have h := BinOp.Eval₁.preservation op _
           have ih := preservation (Eval₁.preservation lhs he) (.trans he hyz)
           sorry
 
