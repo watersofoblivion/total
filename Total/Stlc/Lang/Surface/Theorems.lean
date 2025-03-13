@@ -19,11 +19,12 @@ namespace Total.Stlc.Lang.Surface
       theorem deterministic {op: UnOp} {t t₁ t₂: Term}: Eval₁ op t t₁ → Eval₁ op t t₂ → t₁ = t₂
         | .not, .not => rfl
 
-      theorem progress {op: UnOp} {τ₁ τ₂: Ty} {t₁: Term}: HasType op τ₁ τ₂ → ∃ t₂: Term, Eval₁ op t₁ t₂
-        | .not => ⟨_, .not⟩
+      theorem progress {op: UnOp} {τ₁ τ₂: Ty}: (t₁: Term) → HasType op τ₁ τ₂ → ∃ t₂: Term, Eval₁ op t₁ t₂
+        | .bool _, .not => ⟨_, .not⟩
+        | _, _ => sorry
 
       theorem preservation {op: UnOp} {τ₁ τ₂: Ty} {t₁ t₂: Term}: HasType op τ₁ τ₂ → Eval₁ op t₁ t₂ → Term.HasType t₂ τ₂
-        | .not, .not => rfl
+        | .not, .not => .bool
     end Eval₁
   end UnOp
 
@@ -63,8 +64,41 @@ namespace Total.Stlc.Lang.Surface
         | .gt,  .gt
         | .gte, .gte => rfl
 
-      theorem progress {op: BinOp} {τ₁ τ₂ τ₃: Ty} {t₁ t₂: Term}: HasType op τ₁ τ₂ τ₃ → ∃ t₃: Term, Eval₁ op t₁ t₂ t₃ := sorry
-      theorem preservation {op: BinOp} {τ₁ τ₂ τ₃: Ty} {t₁ t₂ t₃: Term}: HasType op τ₁ τ₂ τ₃ → Eval₁ op t₁ t₂ t₃ → Term.HasType t₂ τ₃ := sorry
+      theorem progress {op: BinOp} {τ₁ τ₂ τ₃: Ty}: (t₁ t₂: Term) → HasType op τ₁ τ₂ τ₃ → ∃ t₃: Term, Eval₁ op t₁ t₂ t₃
+        | .bool _, .bool _, .and => ⟨_, .and⟩
+        | .bool _, .bool _, .or  => ⟨_, .or⟩
+
+        | .nat _, .nat _, .add => ⟨_, .add⟩
+        | .nat _, .nat _, .mul => ⟨_, .mul⟩
+
+        | .bool _, .bool _, .eq  => ⟨_, .eqBool⟩
+        | .nat _,  .nat _,  .eq  => ⟨_, .eqNat⟩
+        | .bool _, .bool _, .neq => ⟨_, .neqBool⟩
+        | .nat _,  .nat _,  .neq => ⟨_, .neqNat⟩
+
+        | .nat _, .nat _, .lt  => ⟨_, .lt⟩
+        | .nat _, .nat _, .lte => ⟨_, .lte⟩
+        | .nat _, .nat _, .gt  => ⟨_, .gt⟩
+        | .nat _, .nat _, .gte => ⟨_, .gte⟩
+
+        | _, _, _ => sorry
+
+      theorem preservation {op: BinOp} {τ₁ τ₂ τ₃: Ty} {t₁ t₂ t₃: Term}: HasType op τ₁ τ₂ τ₃ → Eval₁ op t₁ t₂ t₃ → Term.HasType t₃ τ₃
+        | .and, .and
+        | .or,  .or  => .bool
+
+        | .add, .add
+        | .mul, .mul  => .nat
+
+        | .eq,  .eqBool
+        | .eq,  .eqNat
+        | .neq, .neqBool
+        | .neq, .neqNat => .bool
+
+        | .lt,  .lt
+        | .lte, .lte
+        | .gt,  .gt
+        | .gte, .gte => .bool
     end Eval₁
   end BinOp
 
@@ -91,13 +125,15 @@ namespace Total.Stlc.Lang.Surface
         | .condFalse, .condFalse => rfl
         | .cond he₁,  .cond he₂  => by rw [deterministic he₁ he₂]
 
-      theorem preservation {τ: Ty} {t₁ t₂: Term}: HasType t₁ τ → Eval₁ t₁ t₂ → HasType t₂ τ
-        | .unOp ht _,  .unOp      => UnOp.Eval₁.preservation ht
-        | .unOp ht op, .unOpOp he => preservation op he
+        | _, _ => sorry
 
-        | .binOp ht _ _,   .binOp => BinOp.Eval₁.preservation ht
-        | .binOp lhs rhs, .binOpRight _ he => .add lhs (preservation rhs he)
-        | .binOp lhs rhs, .binOpLeft    he => .add (preservation lhs he) rhs
+      theorem preservation {τ: Ty} {t₁ t₂: Term}: HasType t₁ τ → Eval₁ t₁ t₂ → HasType t₂ τ
+        | .unOp op _,       .unOp _ he => UnOp.Eval₁.preservation op he
+        | .unOp op operand, .unOpOp he => .unOp op (preservation operand he)
+
+        | .binOp op _ _,     .binOp    _ _ he => BinOp.Eval₁.preservation op he
+        | .binOp op lhs rhs, .binOpRight _ he => .binOp op lhs (preservation rhs he)
+        | .binOp op lhs rhs, .binOpLeft    he => .binOp op (preservation lhs he) rhs
 
         | .cond _ t _, .condTrue  => t
         | .cond _ _ f, .condFalse => f
