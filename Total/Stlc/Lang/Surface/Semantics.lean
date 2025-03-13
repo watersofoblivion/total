@@ -7,6 +7,46 @@ namespace Total.Stlc.Lang.Surface
   section Types
   end Types
 
+  namespace UnOp
+    inductive HasType: UnOp → Ty → Ty → Prop where
+      | not: HasType .not [Ty| 𝔹] [Ty| 𝔹]
+
+    inductive Eval₁: UnOp → Term → Term → Prop where
+      | not {operand: Bool}: Eval₁ .not (.bool operand) (.bool !operand)
+
+    -- def Eval := RTC Eval₁
+  end UnOp
+
+  namespace BinOp
+    inductive HasType: BinOp → Ty → Ty → Ty → Prop
+      | and: HasType .and [Ty| 𝔹] [Ty| 𝔹] [Ty| 𝔹]
+      | or:  HasType .or  [Ty| 𝔹] [Ty| 𝔹] [Ty| 𝔹]
+      | add: HasType .add [Ty| ℕ] [Ty| ℕ] [Ty| ℕ]
+      | mul: HasType .mul [Ty| ℕ] [Ty| ℕ] [Ty| ℕ]
+      | eq  {τ: Ty}: HasType .eq  [Ty| ‹τ›] [Ty| ‹τ›] [Ty| 𝔹]
+      | neq {τ: Ty}: HasType .neq [Ty| ‹τ›] [Ty| ‹τ›] [Ty| 𝔹]
+      | lt:  HasType .lt  [Ty| ℕ] [Ty| ℕ] [Ty| 𝔹]
+      | lte: HasType .lte [Ty| ℕ] [Ty| ℕ] [Ty| 𝔹]
+      | gt:  HasType .gt  [Ty| ℕ] [Ty| ℕ] [Ty| 𝔹]
+      | gte: HasType .gte [Ty| ℕ] [Ty| ℕ] [Ty| 𝔹]
+
+    inductive Eval₁: BinOp → Term → Term → Term → Prop where
+      | and {lhs rhs: Bool}: Eval₁ .and [Term| ‹bool:lhs›] [Term| ‹bool:rhs›] [Term| ‹bool:lhs && rhs›]
+      | or  {lhs rhs: Bool}: Eval₁ .or  [Term| ‹bool:lhs›] [Term| ‹bool:rhs›] [Term| ‹bool:lhs || rhs›]
+      | add {lhs rhs: Nat}:  Eval₁ .add [Term| ‹nat:lhs›]  [Term| ‹nat:rhs›]  [Term| ‹nat:lhs + rhs›]
+      | mul {lhs rhs: Nat}:  Eval₁ .mul [Term| ‹nat:lhs›]  [Term| ‹nat:rhs›]  [Term| ‹nat:lhs * rhs›]
+      | eqBool  {lhs rhs: Bool}: Eval₁ .eq  [Term| ‹bool:lhs›] [Term| ‹bool:rhs›] [Term| ‹bool:lhs == rhs›]
+      | eqNat   {lhs rhs: Nat}:  Eval₁ .eq  [Term| ‹nat:lhs›]  [Term| ‹nat:rhs›]  [Term| ‹bool:lhs == rhs›]
+      | neqBool {lhs rhs: Bool}: Eval₁ .neq [Term| ‹bool:lhs›] [Term| ‹bool:rhs›] [Term| ‹bool:lhs != rhs›]
+      | neqNat  {lhs rhs: Nat}:  Eval₁ .neq [Term| ‹nat:lhs›]  [Term| ‹nat:rhs›]  [Term| ‹bool:lhs != rhs›]
+      | lt  {lhs rhs: Nat}: Eval₁ .lt  [Term| ‹nat:lhs›] [Term| ‹nat:rhs›] [Term| ‹bool:lhs < rhs›]
+      | lte {lhs rhs: Nat}: Eval₁ .lte [Term| ‹nat:lhs›] [Term| ‹nat:rhs›] [Term| ‹bool:lhs ≤ rhs›]
+      | gt  {lhs rhs: Nat}: Eval₁ .gt  [Term| ‹nat:lhs›] [Term| ‹nat:rhs›] [Term| ‹bool:lhs > rhs›]
+      | gte {lhs rhs: Nat}: Eval₁ .gte [Term| ‹nat:lhs›] [Term| ‹nat:rhs›] [Term| ‹bool:lhs ≥ rhs›]
+
+    -- def Eval := RTC Eval₁
+  end BinOp
+
   namespace Term
     inductive IsValue: Term → Prop where
       | bool (b: Bool): IsValue [Term| ‹bool:b›]
@@ -17,17 +57,8 @@ namespace Total.Stlc.Lang.Surface
     inductive HasType: Term → Ty → Prop where
       | bool {b: Bool}: HasType [Term| ‹bool:b›] [Ty| 𝔹]
       | nat {n: Nat}: HasType [Term| ‹nat:n›] [Ty| ℕ]
-      | and {lhs rhs: Term} (h₁: HasType lhs [Ty| 𝔹]) (h₂: HasType rhs [Ty| 𝔹]): HasType [Term| ‹lhs› ∧ ‹rhs›] [Ty| 𝔹]
-      | or  {lhs rhs: Term} (h₁: HasType lhs [Ty| 𝔹]) (h₂: HasType rhs [Ty| 𝔹]): HasType [Term| ‹lhs› ∨ ‹rhs›] [Ty| 𝔹]
-      | not {op: Term} (h: HasType op [Ty| 𝔹]): HasType [Term| ¬ ‹op›] [Ty| 𝔹]
-      | add {lhs rhs: Term} (h₁: HasType lhs [Ty| ℕ]) (h₂: HasType rhs [Ty| ℕ]): HasType [Term| ‹lhs› + ‹rhs›] [Ty| ℕ]
-      | mul {lhs rhs: Term} (h₁: HasType lhs [Ty| ℕ]) (h₂: HasType rhs [Ty| ℕ]): HasType [Term| ‹lhs› * ‹rhs›] [Ty| ℕ]
-      | eq  {lhs rhs: Term} {τ: Ty} (h₁: HasType lhs τ) (h₂: HasType rhs τ): HasType [Term| ‹lhs› = ‹rhs›] [Ty| 𝔹]
-      | neq {lhs rhs: Term} {τ: Ty} (h₁: HasType lhs τ) (h₂: HasType rhs τ): HasType [Term| ‹lhs› ≠ ‹rhs›] [Ty| 𝔹]
-      | lt  {lhs rhs: Term} (h₁: HasType lhs [Ty| ℕ]) (h₂: HasType rhs [Ty| ℕ]): HasType [Term| ‹lhs› < ‹rhs›] [Ty| 𝔹]
-      | lte {lhs rhs: Term} (h₁: HasType lhs [Ty| ℕ]) (h₂: HasType rhs [Ty| ℕ]): HasType [Term| ‹lhs› ≤ ‹rhs›] [Ty| 𝔹]
-      | gt  {lhs rhs: Term} (h₁: HasType lhs [Ty| ℕ]) (h₂: HasType rhs [Ty| ℕ]): HasType [Term| ‹lhs› > ‹rhs›] [Ty| 𝔹]
-      | gte {lhs rhs: Term} (h₁: HasType lhs [Ty| ℕ]) (h₂: HasType rhs [Ty| ℕ]): HasType [Term| ‹lhs› ≥ ‹rhs›] [Ty| 𝔹]
+      | unOp {τ₁ τ₂: Ty} {op: UnOp} {operand: Term} (h₁: UnOp.HasType op τ₁ τ₂) (h₂: HasType operand τ₁): HasType (.unOp op operand) τ₂
+      | binOp {τ₁ τ₂ τ₃: Ty} {op: BinOp} {lhs rhs: Term} (h₁: BinOp.HasType op τ₁ τ₂ τ₃) (h₂: HasType lhs τ₁) (h₃: HasType rhs τ₂): HasType (.binOp op lhs rhs) τ₃
       | cond {c t f: Term} {τ: Ty} (h₁: HasType c [Ty| 𝔹]) (h₂: HasType t τ) (h₃: HasType f τ): HasType [Term| if ‹c› then ‹t› else ‹f›] τ
       -- | var  {τ: Ty}: HasType _ τ
       -- | bind {expr scope: Term} {τ₁ τ₂: Ty} (h₁: HasType expr τ₁) (h₂: HasType (ε.bind ι τ₁) scope τ₂): HasType (.bind t₁ expr scope) τ₂
@@ -38,50 +69,12 @@ namespace Total.Stlc.Lang.Surface
       -- | app {params: ParamList} {res: Ty} {fn: Term} {args: ArgList} (h₁: HasType fn (.fn params res)) (h₂: List.foldl (fun p (t, τ) => p ∧ HasType t τ) true (List.zip args params)): HasType (.app fn args) res
 
     inductive Eval₁: Term → Term → Prop where
-      | and {lhs rhs: Bool}: Eval₁ [Term| ‹bool:lhs› ∧ ‹bool:rhs›] [Term| ‹bool:lhs && rhs›]
-      | andRight {lhs rhs₁ rhs₂: Term} (h₁: IsValue lhs) (h₂: Eval₁ rhs₁ rhs₂): Eval₁ [Term| ‹lhs› ∧ ‹rhs₁›] [Term| ‹lhs› ∧ ‹rhs₂›]
-      | andLeft {lhs₁ lhs₂ rhs: Term} (h: Eval₁ lhs₁ lhs₂): Eval₁ [Term| ‹lhs₁› ∧ ‹rhs›] [Term| ‹lhs₂› ∧ ‹rhs›]
+      | unOp {op: UnOp} {operand res: Term} (h₁: IsValue operand) (h₂: UnOp.Eval₁ op operand res): Eval₁ (.unOp op operand) res
+      | unOpOp {op: UnOp} {operand₁ operand₂: Term} (h: Eval₁ operand₁ operand₂): Eval₁ (.unOp op operand₁) (.unOp op operand₂)
 
-      | or {lhs rhs: Bool}: Eval₁ [Term| ‹bool:lhs› ∨ ‹bool:rhs›] [Term| ‹bool:lhs || rhs›]
-      | orRight {lhs rhs₁ rhs₂: Term} (h₁: IsValue lhs) (h₂: Eval₁ rhs₁ rhs₂): Eval₁ [Term| ‹lhs› ∨ ‹rhs₁›] [Term| ‹lhs› ∨ ‹rhs₂›]
-      | orLeft {lhs₁ lhs₂ rhs: Term} (h: Eval₁ lhs₁ lhs₂): Eval₁ [Term| ‹lhs₁› ∨ ‹rhs›] [Term| ‹lhs₂› ∨ ‹rhs›]
-
-      | not {op: Bool}: Eval₁ [Term| ¬ ‹bool:op›] [Term| ‹bool:!op›]
-      | notOp {op₁ op₂: Term} (h: Eval₁ op₁ op₂): Eval₁ [Term| ¬‹op₁›] [Term| ‹op₂›]
-
-      | add {lhs rhs: Nat}: Eval₁ [Term| ‹nat:lhs› + ‹nat:rhs›] [Term| ‹nat:lhs + rhs›]
-      | addRight {lhs rhs₁ rhs₂: Term} (h₁: IsValue lhs) (h₂: Eval₁ rhs₁ rhs₂): Eval₁ [Term| ‹lhs› + ‹rhs₁›] [Term| ‹lhs› + ‹rhs₂›]
-      | addLeft {lhs₁ lhs₂ rhs: Term} (h: Eval₁ lhs₁ lhs₂): Eval₁ [Term| ‹lhs₁› + ‹rhs›] [Term| ‹lhs₂› + ‹rhs›]
-
-      | mul {lhs rhs: Nat}: Eval₁ [Term| ‹nat:lhs› * ‹nat:rhs›] [Term| ‹nat:lhs * rhs›]
-      | mulRight {lhs rhs₁ rhs₂: Term} (h₁: IsValue lhs) (h₂: Eval₁ rhs₁ rhs₂): Eval₁ [Term| ‹lhs› * ‹rhs₁›] [Term| ‹lhs› * ‹rhs₂›]
-      | mulLeft {lhs₁ lhs₂ rhs: Term} (h: Eval₁ lhs₁ lhs₂): Eval₁ [Term| ‹lhs₁› * ‹rhs›] [Term| ‹lhs₂› * ‹rhs›]
-
-      | eqBool {lhs rhs: Bool}: Eval₁ [Term| ‹bool:lhs› = ‹bool:rhs›] [Term| ‹bool:lhs == rhs›]
-      | eqNat  {lhs rhs: Nat}: Eval₁ [Term| ‹nat:lhs› = ‹nat:rhs›] [Term| ‹bool:lhs == rhs›]
-      | eqRight {lhs rhs₁ rhs₂: Term} (h₁: IsValue lhs) (h₂: Eval₁ rhs₁ rhs₂): Eval₁ [Term| ‹lhs› = ‹rhs₁›] [Term| ‹lhs› = ‹rhs₂›]
-      | eqLeft {lhs₁ lhs₂ rhs: Term} (h: Eval₁ lhs₁ lhs₂): Eval₁ [Term| ‹lhs₁› = ‹rhs›] [Term| ‹lhs₂› = ‹rhs›]
-
-      | neqBool {lhs rhs: Bool}: Eval₁ [Term| ‹bool:lhs› ≠ ‹bool:rhs›] [Term| ‹bool:lhs != rhs›]
-      | neqNat  {lhs rhs: Nat}: Eval₁ [Term| ‹nat:lhs› ≠ ‹nat:rhs›] [Term| ‹bool:lhs != rhs›]
-      | neqRight {lhs rhs₁ rhs₂: Term} (h₁: IsValue lhs) (h₂: Eval₁ rhs₁ rhs₂): Eval₁ [Term| ‹lhs› ≠ ‹rhs₁›] [Term| ‹lhs› ≠ ‹rhs₂›]
-      | neqLeft {lhs₁ lhs₂ rhs: Term} (h: Eval₁ lhs₁ lhs₂): Eval₁ [Term| ‹lhs₁› ≠ ‹rhs›] [Term| ‹lhs₂› ≠ ‹rhs›]
-
-      | lt {lhs rhs: Nat}: Eval₁ [Term| ‹nat:lhs› < ‹nat:rhs›] [Term| ‹bool:lhs < rhs›]
-      | ltRight {lhs rhs₁ rhs₂: Term} (h₁: IsValue lhs) (h₂: Eval₁ rhs₁ rhs₂): Eval₁ [Term| ‹lhs› < ‹rhs₁›] [Term| ‹lhs› < ‹rhs₂›]
-      | ltLeft {lhs₁ lhs₂ rhs: Term} (h: Eval₁ lhs₁ lhs₂): Eval₁ [Term| ‹lhs₁› < ‹rhs›] [Term| ‹lhs₂› < ‹rhs›]
-
-      | lte {lhs rhs: Nat}: Eval₁ [Term| ‹nat:lhs› ≤ ‹nat:rhs›] [Term| ‹bool:lhs ≤ rhs›]
-      | lteRight {lhs rhs₁ rhs₂: Term} (h₁: IsValue lhs) (h₂: Eval₁ rhs₁ rhs₂): Eval₁ [Term| ‹lhs› ≤ ‹rhs₁›] [Term| ‹lhs› ≤ ‹rhs₂›]
-      | lteLeft {lhs₁ lhs₂ rhs: Term} (h: Eval₁ lhs₁ lhs₂): Eval₁ [Term| ‹lhs₁› ≤ ‹rhs›] [Term| ‹lhs₂› ≤ ‹rhs›]
-
-      | gt {lhs rhs: Nat}: Eval₁ [Term| ‹nat:lhs› > ‹nat:rhs›] [Term| ‹bool:lhs > rhs›]
-      | gtRight {lhs rhs₁ rhs₂: Term} (h₁: IsValue lhs) (h₂: Eval₁ rhs₁ rhs₂): Eval₁ [Term| ‹lhs› > ‹rhs₁›] [Term| ‹lhs› > ‹rhs₂›]
-      | gtLeft {lhs₁ lhs₂ rhs: Term} (h: Eval₁ lhs₁ lhs₂): Eval₁ [Term| ‹lhs₁› > ‹rhs›] [Term| ‹lhs₂› > ‹rhs›]
-
-      | gte {lhs rhs: Nat}: Eval₁ [Term| ‹nat:lhs› ≥ ‹nat:rhs›] [Term| ‹bool:lhs ≥ rhs›]
-      | gteRight {lhs rhs₁ rhs₂: Term} (h₁: IsValue lhs) (h₂: Eval₁ rhs₁ rhs₂): Eval₁ [Term| ‹lhs› ≥ ‹rhs₁›] [Term| ‹lhs› ≥ ‹rhs₂›]
-      | gteLeft {lhs₁ lhs₂ rhs: Term} (h: Eval₁ lhs₁ lhs₂): Eval₁ [Term| ‹lhs₁› ≥ ‹rhs›] [Term| ‹lhs₂› ≥ ‹rhs›]
+      | binOp {op: BinOp} {lhs rhs res: Term} (h₁: IsValue lhs) (h₂: IsValue rhs) (h₃: BinOp.Eval₁ op lhs rhs res): Eval₁ (.binOp op lhs rhs) res
+      | binOpRight {op: BinOp} {lhs rhs₁ rhs₂: Term} (h₁: IsValue lhs) (h₂: Eval₁ rhs₁ rhs₂): Eval₁ (.binOp op lhs rhs₁) (.binOp op lhs rhs₂)
+      | binOpLeft {op: BinOp} {lhs₁ lhs₂ rhs: Term} (h: Eval₁ lhs₁ lhs₂): Eval₁ (.binOp op lhs₁ rhs) (.binOp op lhs₂ rhs)
 
       | condTrue {t f: Term}: Eval₁ [Term| if tru then ‹t› else ‹f›] [Term| ‹t›]
       | condFalse {t f: Term}: Eval₁ [Term| if fls then ‹t› else ‹f›] [Term| ‹f›]

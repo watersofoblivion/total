@@ -5,42 +5,50 @@ import Total.Stlc.Lang.Surface.Syntax
 import Total.Stlc.Lang.Surface.Semantics
 
 namespace Total.Stlc.Lang.Surface
+  set_option maxHeartbeats 10000000
   namespace Ty
   end Ty
 
-  namespace Term
+  namespace UnOp
     namespace HasType
-      theorem deterministic {t: Term} {τ₁ τ₂: Ty}: HasType t τ₁ → HasType t τ₂ → τ₁ = τ₂
-        | .bool, .bool
-        | .nat,  .nat  => rfl
-
-        | .and _ _, .and _ _
-        | .or  _ _, .or  _ _
-        | .not _,   .not _   => rfl
-
-        | .add _ _, .add _ _
-        | .mul _ _, .mul _ _ => rfl
-
-        | .eq  _ _, .eq  _ _
-        | .neq _ _, .neq _ _ => rfl
-
-        | .lt  _ _, .lt  _ _
-        | .lte _ _, .lte _ _
-        | .gt  _ _, .gt  _ _
-        | .gte _ _, .gte _ _ => rfl
-
-        | .cond _ t₁ _, .cond _ t₂ _ =>
-          have ih₂ := deterministic t₁ t₂
-          by rw [ih₂]
+      theorem deterministic {op: UnOp} {τ₁ τ₂ τ₃: Ty}: HasType op τ₁ τ₂ → HasType op τ₁ τ₃ → τ₂ = τ₃
+        | .not, .not => rfl
     end HasType
 
     namespace Eval₁
-      set_option maxHeartbeats 1000000
+      theorem deterministic {op: UnOp} {t t₁ t₂: Term}: Eval₁ op t t₁ → Eval₁ op t t₂ → t₁ = t₂
+        | .not, .not => rfl
 
-      theorem deterministic {t t₁ t₂: Term}: Eval₁ t t₁ → Eval₁ t t₂ → t₁ = t₂
+      theorem progress {op: UnOp} {τ₁ τ₂: Ty} {t₁: Term}: HasType op τ₁ τ₂ → ∃ t₂: Term, Eval₁ op t₁ t₂
+        | .not => ⟨_, .not⟩
+
+      theorem preservation {op: UnOp} {τ₁ τ₂: Ty} {t₁ t₂: Term}: HasType op τ₁ τ₂ → Eval₁ op t₁ t₂ → Term.HasType t₂ τ₂
+        | .not, .not => rfl
+    end Eval₁
+  end UnOp
+
+  namespace BinOp
+    namespace HasType
+      theorem deterministic {op: BinOp} {τ₁ τ₂ τ₃ τ₄: Ty}: HasType op τ₁ τ₂ τ₃ → HasType op τ₁ τ₂ τ₄ → τ₃ = τ₄
         | .and, .and
         | .or,  .or
-        | .not, .not
+
+        | .add, .add
+        | .mul, .mul
+
+        | .eq,  .eq
+        | .neq, .neq
+
+        | .lt,  .lt
+        | .lte, .lte
+        | .gt,  .gt
+        | .gte, .gte => rfl
+    end HasType
+
+    namespace Eval₁
+      theorem deterministic {op: BinOp} {t₁ t₂ t₃ t₄: Term}: Eval₁ op t₁ t₂ t₃ → Eval₁ op t₁ t₂ t₄ → t₃ = t₄
+        | .and, .and
+        | .or,  .or
 
         | .add, .add
         | .mul, .mul
@@ -53,96 +61,43 @@ namespace Total.Stlc.Lang.Surface
         | .lt,  .lt
         | .lte, .lte
         | .gt,  .gt
-        | .gte, .gte
+        | .gte, .gte => rfl
+
+      theorem progress {op: BinOp} {τ₁ τ₂ τ₃: Ty} {t₁ t₂: Term}: HasType op τ₁ τ₂ τ₃ → ∃ t₃: Term, Eval₁ op t₁ t₂ t₃ := sorry
+      theorem preservation {op: BinOp} {τ₁ τ₂ τ₃: Ty} {t₁ t₂ t₃: Term}: HasType op τ₁ τ₂ τ₃ → Eval₁ op t₁ t₂ t₃ → Term.HasType t₂ τ₃ := sorry
+    end Eval₁
+  end BinOp
+
+  namespace Term
+    namespace HasType
+      theorem deterministic {t: Term} {τ₁ τ₂: Ty}: HasType t τ₁ → HasType t τ₂ → τ₁ = τ₂
+        | .bool,          .bool
+        | .nat,           .nat           => rfl
+        | .unOp  op₁ _,   .unOp  op₂ _   => UnOp.HasType.deterministic op₁ op₂
+        | .binOp op₁ _ _, .binOp op₂ _ _ => BinOp.HasType.deterministic op₁ op₂
+        | .cond _ t₁ _,   .cond _ t₂ _   => by rw [deterministic t₁ t₂]
+    end HasType
+
+    namespace Eval₁
+      theorem deterministic {t t₁ t₂: Term}: Eval₁ t t₁ → Eval₁ t t₂ → t₁ = t₂
+        | .unOp _ he₁, .unOp _ he₂ => by rw [UnOp.Eval₁.deterministic he₁ he₂]
+        | .unOpOp he₁, .unOpOp he₂ => by rw [deterministic he₁ he₂]
+
+        | .binOp    _ _ he₁, .binOp    _ _ he₂ => by rw [BinOp.Eval₁.deterministic he₁ he₂]
+        | .binOpRight _ he₁, .binOpRight _ he₂
+        | .binOpLeft    he₁, .binOpLeft    he₂ => by rw [deterministic he₁ he₂]
 
         | .condTrue,  .condTrue
         | .condFalse, .condFalse => rfl
-
-        | .andRight _ he₁, .andRight _ he₂
-        | .andLeft    he₁, .andLeft    he₂
-        | .orRight  _ he₁, .orRight  _ he₂
-        | .orLeft     he₁, .orLeft     he₂
-        | .notOp      he₁, .notOp      he₂
-
-        | .addRight _ he₁, .addRight _ he₂
-        | .addLeft    he₁, .addLeft    he₂
-        | .mulRight _ he₁, .mulRight _ he₂
-        | .mulLeft    he₁, .mulLeft    he₂
-
-        | .eqRight  _ he₁, .eqRight  _ he₂
-        | .eqLeft     he₁, .eqLeft     he₂
-        | .neqRight _ he₁, .neqRight _ he₂
-        | .neqLeft    he₁, .neqLeft    he₂
-
-        | .gtRight  _ he₁, .gtRight  _ he₂
-        | .gtLeft     he₁, .gtLeft     he₂
-        | .gteRight _ he₁, .gteRight _ he₂
-        | .gteLeft    he₁, .gteLeft    he₂
-        | .ltRight  _ he₁, .ltRight  _ he₂
-        | .ltLeft     he₁, .ltLeft     he₂
-        | .lteRight _ he₁, .lteRight _ he₂
-        | .lteLeft    he₁, .lteLeft    he₂
-
-        | .cond       he₁, .cond       he₂ =>
-          have ih := deterministic he₁ he₂
-          by rw [ih]
-
-        | .gteRight hv he₁, .gteLeft he₂ => sorry
-        | .gtRight  _ _, .gtLeft  _
-        | .lteRight _ _, .lteLeft _
-        | .ltRight  _ _, .ltLeft  _
-        | .neqRight _ _, .neqLeft _
-        | .eqRight  _ _, .eqLeft  _
-        | .mulRight _ _, .mulLeft _
-        | .addRight _ _, .addLeft _
-        | .orRight  _ _, .orLeft  _
-        | .andRight _ _, .andLeft _ => sorry
+        | .cond he₁,  .cond he₂  => by rw [deterministic he₁ he₂]
 
       theorem preservation {τ: Ty} {t₁ t₂: Term}: HasType t₁ τ → Eval₁ t₁ t₂ → HasType t₂ τ
-        | .and _   _,   .and           => .bool
-        | .and lhs rhs, .andRight _ he => .and lhs (preservation rhs he)
-        | .and lhs rhs, .andLeft    he => .and (preservation lhs he) rhs
+        | .unOp ht _,  .unOp      => UnOp.Eval₁.preservation ht
+        | .unOp ht op, .unOpOp he => preservation op he
 
-        | .or _   _,   .or           => .bool
-        | .or lhs rhs, .orRight _ he => .or lhs (preservation rhs he)
-        | .or lhs rhs, .orLeft    he => .or (preservation lhs he) rhs
-
-        | .not _,  .not      => .bool
-        | .not op, .notOp he => preservation op he
-
-        | .add _   _,   .add           => .nat
-        | .add lhs rhs, .addRight _ he => .add lhs (preservation rhs he)
-        | .add lhs rhs, .addLeft    he => .add (preservation lhs he) rhs
-
-        | .mul _   _,   .mul           => .nat
-        | .mul lhs rhs, .mulRight _ he => .mul lhs (preservation rhs he)
-        | .mul lhs rhs, .mulLeft    he => .mul (preservation lhs he) rhs
-
-        | .eq _   _,   .eqBool       => .bool
-        | .eq _   _,   .eqNat        => .bool
-        | .eq lhs rhs, .eqRight _ he => .eq lhs (preservation rhs he)
-        | .eq lhs rhs, .eqLeft    he => .eq (preservation lhs he) rhs
-
-        | .neq _   _,   .neqBool       => .bool
-        | .neq _   _,   .neqNat        => .bool
-        | .neq lhs rhs, .neqRight _ he => .neq lhs (preservation rhs he)
-        | .neq lhs rhs, .neqLeft    he => .neq (preservation lhs he) rhs
-
-        | .lt _   _,   .lt           => .bool
-        | .lt lhs rhs, .ltRight _ he => .lt  lhs (preservation rhs he)
-        | .lt lhs rhs, .ltLeft    he => .lt  (preservation lhs he) rhs
-
-        | .lte _   _,    .lte          => .bool
-        | .lte lhs rhs, .lteRight _ he => .lte lhs (preservation rhs he)
-        | .lte lhs rhs, .lteLeft    he => .lte (preservation lhs he) rhs
-
-        | .gt _   _,   .gt           => .bool
-        | .gt lhs rhs, .gtRight _ he => .gt  lhs (preservation rhs he)
-        | .gt lhs rhs, .gtLeft    he => .gt  (preservation lhs he) rhs
-
-        | .gte _   _,   .gte           => .bool
-        | .gte lhs rhs, .gteRight _ he => .gte lhs (preservation rhs he)
-        | .gte lhs rhs, .gteLeft    he => .gte (preservation lhs he) rhs
+        | .binOp ht _ _,   .binOp => BinOp.Eval₁.preservation ht
+        | .binOp lhs rhs, .binOpRight _ he => .add lhs (preservation rhs he)
+        | .binOp lhs rhs, .binOpLeft    he => .add (preservation lhs he) rhs
 
         | .cond _ t _, .condTrue  => t
         | .cond _ _ f, .condFalse => f
@@ -152,73 +107,16 @@ namespace Total.Stlc.Lang.Surface
         | .bool => .inl (.bool _)
         | .nat  => .inl (.nat  _)
 
-        | .and lhs rhs =>
-          match progress lhs, progress rhs with
-            | .inl (.bool _), .inl (.bool _) => .inr ⟨_, .and⟩
-            | .inl hv,        .inr ⟨_, he⟩   => .inr ⟨_, .andRight hv he⟩
-            | .inr ⟨_, he⟩,   _              => .inr ⟨_, .andLeft he⟩
-        | .or  lhs rhs =>
-          match progress lhs, progress rhs with
-            | .inl (.bool _), .inl (.bool _) => .inr ⟨_, .or⟩
-            | .inl hv,        .inr ⟨_, he⟩   => .inr ⟨_, .orRight hv he⟩
-            | .inr ⟨_, he⟩,   _              => .inr ⟨_, .orLeft he⟩
-        | .not op =>
-          match progress op with
-            | .inl (.bool _) => .inr ⟨_, .not⟩
-            | .inr ⟨_, he⟩   => .inr ⟨_, .notOp he⟩
+        | .unOp op operand =>
+          match progress operand with
+            | .inl v       => .inr ⟨_, .unOp v⟩
+            | .inr ⟨_, he⟩ => .inr ⟨_, .notOp he⟩
 
-        | .add lhs rhs =>
+        | .binOp op lhs rhs =>
           match progress lhs, progress rhs with
-            | .inl (.nat _), .inl (.nat _) => .inr ⟨_, .add⟩
-            | .inl hv,       .inr ⟨_, he⟩  => .inr ⟨_, .addRight hv he⟩
-            | .inr ⟨_, he⟩,  _             => .inr ⟨_, .addLeft he⟩
-        | .mul lhs rhs =>
-          match progress lhs, progress rhs with
-            | .inl (.nat _), .inl (.nat _) => .inr ⟨_, .mul⟩
-            | .inl hv,       .inr ⟨_, he⟩  => .inr ⟨_, .mulRight hv he⟩
-            | .inr ⟨_, he⟩,  _             => .inr ⟨_, .mulLeft he⟩
-
-        | .eq  lhs rhs =>
-          match progress lhs, progress rhs with
-            | .inl (.bool _), .inl (.bool _) => .inr ⟨_, .eqBool⟩
-            | .inl (.nat _),  .inl (.nat _)  => .inr ⟨_, .eqNat⟩
-            | .inl hv,        .inr ⟨_, he⟩   => .inr ⟨_, .eqRight hv he⟩
-            | .inr ⟨_, he⟩,   _              => .inr ⟨_, .eqLeft he⟩
-
-            | .inl (.nat _),  .inl (.bool true)  => sorry
-            | .inl (.nat _),  .inl (.bool false) => sorry
-            | .inl (.bool _), .inl (.nat _)      => sorry
-        | .neq lhs rhs =>
-          match progress lhs, progress rhs with
-            | .inl (.bool _), .inl (.bool _) => .inr ⟨_, .neqBool⟩
-            | .inl (.nat _),  .inl (.nat _)  => .inr ⟨_, .neqNat⟩
-            | .inl hv,        .inr ⟨_, he⟩   => .inr ⟨_, .neqRight hv he⟩
-            | .inr ⟨_, he⟩,   _              => .inr ⟨_, .neqLeft he⟩
-
-            | .inl (.nat _),  .inl (.bool true)  => sorry
-            | .inl (.nat _),  .inl (.bool false) => sorry
-            | .inl (.bool _), .inl (.nat _)      => sorry
-
-        | .lt  lhs rhs =>
-          match progress lhs, progress rhs with
-            | .inl (.nat _),  .inl (.nat _)  => .inr ⟨_, .lt⟩
-            | .inl hv,        .inr ⟨_, he⟩   => .inr ⟨_, .ltRight hv he⟩
-            | .inr ⟨_, he⟩,   _              => .inr ⟨_, .ltLeft he⟩
-        | .lte lhs rhs =>
-          match progress lhs, progress rhs with
-            | .inl (.nat _),  .inl (.nat _)  => .inr ⟨_, .lte⟩
-            | .inl hv,        .inr ⟨_, he⟩   => .inr ⟨_, .lteRight hv he⟩
-            | .inr ⟨_, he⟩,   _              => .inr ⟨_, .lteLeft he⟩
-        | .gt  lhs rhs =>
-          match progress lhs, progress rhs with
-            | .inl (.nat _),  .inl (.nat _)  => .inr ⟨_, .gt⟩
-            | .inl hv,        .inr ⟨_, he⟩   => .inr ⟨_, .gtRight hv he⟩
-            | .inr ⟨_, he⟩,   _              => .inr ⟨_, .gtLeft he⟩
-        | .gte lhs rhs =>
-          match progress lhs, progress rhs with
-            | .inl (.nat _),  .inl (.nat _)  => .inr ⟨_, .gte⟩
-            | .inl hv,        .inr ⟨_, he⟩   => .inr ⟨_, .gteRight hv he⟩
-            | .inr ⟨_, he⟩,   _              => .inr ⟨_, .gteLeft he⟩
+            | .inl hv₁, .inl hv₂ => .inr ⟨_, .binOp hv₁ hv₂ (UnOp.Eval₁ op hv₁ hv₂)⟩
+            | .inl hv,       .inr ⟨_, he⟩  => .inr ⟨_, .binOpRight hv he⟩
+            | .inr ⟨_, he⟩,  _             => .inr ⟨_, .binOpLeft he⟩
 
         | .cond c t f =>
           match progress c with
@@ -232,9 +130,70 @@ namespace Total.Stlc.Lang.Surface
     end Eval₁
 
     namespace Eval
-      theorem deterministic {t t₁ t₂: Term}: Eval t t₁ → Eval t t₂ → t₁ = t₂ := sorry
-      theorem preservation {τ: Ty} {t₁ t₂: Term}: HasType t₁ τ → Eval t₁ t₂ → HasType t₂ τ := sorry
-      theorem progress {τ: Ty} {t₁: Term}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Term, Eval t₁ t₂ := sorry
+      theorem deterministic {t t₁ t₂: Term}: Eval t t₁ → Eval t t₂ → t₁ = t₂
+        | .refl,            .refl            => rfl
+        | .refl,            .trans hxy  hyz  => by sorry
+        | .trans hxy  hyz,  .refl            => by sorry
+        | .trans hxy₁ hyz₁, .trans hxy₂ hyz₂ => by sorry
+          -- have h₁ := Eval₁.deterministic hxy₁ hxy₂
+          -- have h₂ := Eval.deterministic hyz₁ hyz₂
+          -- by
+          --   sorry
+
+      theorem preservation {τ: Ty} {t₁ t₂: Term}: HasType t₁ τ → Eval t₁ t₂ → HasType t₂ τ
+        | .bool, .refl          => .bool
+        | .bool, .trans hxy hyz => sorry
+
+        | .nat, .refl          => .nat
+        | .nat, .trans hxy hyz => sorry
+
+
+        | .unOp op, .refl => .unOp (preservation op .refl)
+        -- | .unOp op, .trans .not        hyz => sorry
+        -- | .unOp op, .trans (.unOpOp he) hyz => sorry
+
+        | .binOp lhs rhs, .refl               => .binOp (preservation lhs .refl) (preservation rhs .refl)
+        | .binOp lhs rhs, .trans .binOp .refl =>
+          have ih₁ := preservation lhs .refl
+          have ih₂ := preservation rhs .refl
+          sorry
+        | .binOp lhs rhs, .trans (.binOpRight hv he) hyz   =>
+          have ih := preservation (Eval₁.preservation rhs he) (.trans he hyz)
+          sorry
+        | .binOp lhs rhs, .trans (.binOpLeft he)     hyz   =>
+          have ih := preservation (Eval₁.preservation lhs he) (.trans he hyz)
+          sorry
+
+        -- | .cond c t f, .refl                 => .cond (preservation c .refl) (preservation t .refl) (preservation f .refl)
+        -- | .cond c t f, .trans .condTrue  hyz => sorry
+        -- | .cond c t f, .trans (@Eval₁.condFalse .(t₁) .(t₂)) hyz => sorry
+        -- | .cond c t f, .trans (.cond he) hyz => sorry
+
+        | _, _ => sorry
+
+      theorem progress {τ: Ty} {t₁: Term}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Term, Eval t₁ t₂
+        | .bool => .inl (.bool _)
+        | .nat  => .inl (.nat  _)
+
+        | .unOp op operand =>
+          match progress operand with
+            | .inl (.bool _)           => .inr ⟨_, .trans (.unOp op) .refl⟩
+            | .inl hv                  => sorry -- .inr ⟨_, .trans (.andRight hv _) .refl⟩
+            | .inr ⟨_, .refl⟩          => sorry -- .inr ⟨_, .trans (.andLeft _) .refl⟩
+            | .inr ⟨_, .trans hxy hyz⟩ => sorry -- .inr ⟨_, .trans (.andLeft _) .refl⟩
+
+        | .binOp op lhs rhs =>
+          match progress lhs, progress rhs with
+            | .inl (.bool _),           .inl (.bool _)           => .inr ⟨_, .trans (.binOp op) .refl⟩
+            | .inl hv,                  .inr ⟨_, .refl⟩          => sorry -- .inr ⟨_, .trans (.andRight hv _) .refl⟩
+            | .inl hv,                  .inr ⟨_, .trans hxy hyz⟩ => sorry -- .inr ⟨_, .trans (.andRight hv hxy) hyz⟩
+            | .inr ⟨_, .refl⟩,          _                        => sorry -- .inr ⟨_, .trans (.andLeft _) .refl⟩
+            | .inr ⟨_, .trans hxy hyz⟩, _                        => sorry -- .inr ⟨_, .trans (.andLeft _) .refl⟩
+
+        | .cond c t f =>
+          match progress c with
+            | .inl hv      => sorry
+            | .inr ⟨_, he⟩ => sorry
     end Eval
   end Term
 

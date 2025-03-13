@@ -2,6 +2,8 @@ import Total.Stlc.Lang.Surface.Grammar
 
 namespace Total.Stlc.Lang.Surface
   declare_syntax_cat stlc_surface_ty
+  declare_syntax_cat stlc_surface_un_op
+  declare_syntax_cat stlc_surface_bin_op
   declare_syntax_cat stlc_surface_tm
   declare_syntax_cat stlc_surface_top
 
@@ -58,6 +60,46 @@ namespace Total.Stlc.Lang.Surface
     end Functions
   end Types
 
+  section UnOps
+    scoped syntax "[UnOp|" stlc_surface_un_op "]" : term
+
+    scoped syntax "‹un:" term "›" : stlc_surface_un_op
+    scoped syntax "¬" : stlc_surface_un_op
+
+    macro_rules
+      | `([UnOp| ‹un: $t:term › ]) => `($(Lean.quote t))
+      | `([UnOp| ¬ ])              => `(UnOp.not)
+  end UnOps
+
+  section BinOps
+    scoped syntax "[BinOp|" stlc_surface_bin_op "]" : term
+
+    scoped syntax "‹bin:" term "›" : stlc_surface_bin_op
+    scoped syntax "∧" : stlc_surface_bin_op
+    scoped syntax "∨" : stlc_surface_bin_op
+    scoped syntax "+" : stlc_surface_bin_op
+    scoped syntax "*" : stlc_surface_bin_op
+    scoped syntax "=" : stlc_surface_bin_op
+    scoped syntax "≠" : stlc_surface_bin_op
+    scoped syntax "<" : stlc_surface_bin_op
+    scoped syntax "≤" : stlc_surface_bin_op
+    scoped syntax ">" : stlc_surface_bin_op
+    scoped syntax "≥" : stlc_surface_bin_op
+
+    macro_rules
+      | `([BinOp| ‹bin: $t:term › ]) => `($(Lean.quote t))
+      | `([BinOp| ∧ ])               => `(BinOp.and)
+      | `([BinOp| ∨ ])               => `(BinOp.or)
+      | `([BinOp| + ])               => `(BinOp.add)
+      | `([BinOp| * ])               => `(BinOp.mul)
+      | `([BinOp| = ])               => `(BinOp.eq)
+      | `([BinOp| ≠ ])               => `(BinOp.neq)
+      | `([BinOp| < ])               => `(BinOp.lt)
+      | `([BinOp| ≤ ])               => `(BinOp.lte)
+      | `([BinOp| > ])               => `(BinOp.gt)
+      | `([BinOp| ≥ ])               => `(BinOp.gte)
+  end BinOps
+
   section Terms
     scoped syntax "[Term|" stlc_surface_tm "]" : term
 
@@ -105,97 +147,80 @@ namespace Total.Stlc.Lang.Surface
       example: [Term| ‹nat:n›] = @Term.nat n := rfl
     end Nats
 
-    section Equality
-      scoped syntax stlc_surface_tm "=" stlc_surface_tm : stlc_surface_tm
-      scoped syntax stlc_surface_tm "≠" stlc_surface_tm : stlc_surface_tm
+    section UnOp
+      scoped syntax stlc_surface_un_op stlc_surface_tm : stlc_surface_tm
 
       macro_rules
-        | `([Term| $lhs:stlc_surface_tm = $rhs:stlc_surface_tm]) => `(Term.eq  [Term| $lhs] [Term| $rhs])
-        | `([Term| $lhs:stlc_surface_tm ≠ $rhs:stlc_surface_tm]) => `(Term.neq [Term| $lhs] [Term| $rhs])
+        | `([Term| $op:stlc_surface_un_op $operand:stlc_surface_tm]) => `(Term.unOp [UnOp| $op] [Term| $operand])
 
+      variable {op: UnOp}
+      variable {t₁: Term}
+
+      example: [Term| ‹un:op› ‹t›] = .unOp op t := rfl
+    end UnOp
+
+    section BinOp
+      scoped syntax stlc_surface_tm stlc_surface_bin_op stlc_surface_tm : stlc_surface_tm
+
+      macro_rules
+        | `([Term| $lhs:stlc_surface_tm $op:stlc_surface_bin_op $rhs:stlc_surface_tm]) => `(Term.binOp [BinOp| $op] [Term| $lhs] [Term| $rhs])
+
+      variable {op: BinOp}
       variable {t₁ t₂: Term}
 
-      example: [Term| ‹t₁› = ‹t₂›] = .eq  t₁ t₂ := rfl
-      example: [Term| ‹t₁› ≠ ‹t₂›] = .neq t₁ t₂ := rfl
-    end Equality
+      example: [Term| ‹t₁› ‹bin:op› ‹t₂›] = .binOp op t₁ t₂ := rfl
+    end BinOp
 
     section Logic
-      scoped syntax:30 stlc_surface_tm:30 "∨" stlc_surface_tm:31 : stlc_surface_tm
-      scoped syntax:40 stlc_surface_tm:40 "∧" stlc_surface_tm:41 : stlc_surface_tm
-      scoped syntax:max "¬" stlc_surface_tm:max : stlc_surface_tm
-
-      macro_rules
-        | `([Term| $lhs:stlc_surface_tm ∧ $rhs:stlc_surface_tm ]) => `(Term.and [Term| $lhs] [Term| $rhs])
-        | `([Term| $lhs:stlc_surface_tm ∨ $rhs:stlc_surface_tm ]) => `(Term.or  [Term| $lhs] [Term| $rhs])
-        | `([Term| ¬ $op:stlc_surface_tm ])                       => `(Term.not [Term| $op])
-
       variable {t t₁ t₂ t₃ t₄: Term}
 
-      example: [Term| ‹t₁› ∧ ‹t₂›] = .and t₁ t₂ := rfl
-      example: [Term| ‹t₁› ∨ ‹t₂›] = .or  t₁ t₂ := rfl
-      example: [Term| ¬‹t›]        = .not t     := rfl
+      example: [Term| ‹t₁› ∧ ‹t₂›] = .binOp .and t₁ t₂ := rfl
+      example: [Term| ‹t₁› ∨ ‹t₂›] = .binOp .or  t₁ t₂ := rfl
+      example: [Term| ¬‹t›]        = .unOp  .not t     := rfl
 
-      example: [Term| ‹t₁› ∧ ‹t₂› ∧ ‹t₃›]   = .and (.and t₁ t₂) t₃ := rfl
-      example: [Term| (‹t₁› ∧ ‹t₂›) ∧ ‹t₃›] = .and (.and t₁ t₂) t₃ := rfl
-      example: [Term| ‹t₁› ∧ (‹t₂› ∧ ‹t₃›)] = .and t₁ (.and t₂ t₃) := rfl
-      example: [Term| ‹t₁› ∨ ‹t₂› ∨ ‹t₃›]   = .or  (.or  t₁ t₂) t₃ := rfl
-      example: [Term| (‹t₁› ∨ ‹t₂›) ∨ ‹t₃›] = .or  (.or  t₁ t₂) t₃ := rfl
-      example: [Term| ‹t₁› ∨ (‹t₂› ∨ ‹t₃›)] = .or  t₁ (.or  t₂ t₃) := rfl
+      -- example: [Term| ‹t₁› ∧ ‹t₂› ∧ ‹t₃›]   = .binOp .and (.binOp .and t₁ t₂) t₃ := rfl
+      example: [Term| (‹t₁› ∧ ‹t₂›) ∧ ‹t₃›] = .binOp .and (.binOp .and t₁ t₂) t₃ := rfl
+      example: [Term| ‹t₁› ∧ (‹t₂› ∧ ‹t₃›)] = .binOp .and t₁ (.binOp .and t₂ t₃) := rfl
+      -- example: [Term| ‹t₁› ∨ ‹t₂› ∨ ‹t₃›]   = .binOp .or  (.binOp .or  t₁ t₂) t₃ := rfl
+      example: [Term| (‹t₁› ∨ ‹t₂›) ∨ ‹t₃›] = .binOp .or  (.binOp .or  t₁ t₂) t₃ := rfl
+      example: [Term| ‹t₁› ∨ (‹t₂› ∨ ‹t₃›)] = .binOp .or  t₁ (.binOp .or  t₂ t₃) := rfl
 
-      example: [Term| ¬‹t₁› ∧ ‹t₂›]   = .and (.not t₁) t₂ := rfl
-      example: [Term| ‹t₁› ∧ ¬‹t₂›]   = .and t₁ (.not t₂) := rfl
-      example: [Term| ¬‹t₁› ∨ ‹t₂›]   = .or  (.not t₁) t₂ := rfl
-      example: [Term| ‹t₁› ∨ ¬‹t₂›]   = .or  t₁ (.not t₂) := rfl
-      example: [Term| ¬(‹t₁› ∧ ‹t₂›)] = .not (.and t₁ t₂) := rfl
-      example: [Term| ¬(‹t₁› ∨ ‹t₂›)] = .not (.or  t₁ t₂) := rfl
+      -- example: [Term| ¬‹t₁› ∧ ‹t₂›]   = .binOp .and (.unOp .not t₁) t₂  := rfl
+      example: [Term| ‹t₁› ∧ ¬‹t₂›]   = .binOp .and t₁ (.unOp .not t₂)  := rfl
+      -- example: [Term| ¬‹t₁› ∨ ‹t₂›]   = .binOp .or  (.unOp .not t₁) t₂  := rfl
+      example: [Term| ‹t₁› ∨ ¬‹t₂›]   = .binOp .or  t₁ (.unOp .not t₂)  := rfl
+      example: [Term| ¬(‹t₁› ∧ ‹t₂›)] = .unOp  .not (.binOp .and t₁ t₂) := rfl
+      example: [Term| ¬(‹t₁› ∨ ‹t₂›)] = .unOp  .not (.binOp .or  t₁ t₂) := rfl
 
-      example: [Term| ‹t₁› ∧ ‹t₂› ∨ ‹t₃› ∧ ‹t₄›] = .or (.and t₁ t₂) (.and t₃ t₄) := rfl
+      -- example: [Term| ‹t₁› ∧ ‹t₂› ∨ ‹t₃› ∧ ‹t₄›] = .binOp .or (.binOp .and t₁ t₂) (.binOp .and t₃ t₄) := rfl
     end Logic
 
     section Arithmetic
-      scoped syntax:60 stlc_surface_tm:60 "+" stlc_surface_tm:61 : stlc_surface_tm
-      scoped syntax:70 stlc_surface_tm:70 "*" stlc_surface_tm:71 : stlc_surface_tm
-
-      macro_rules
-        | `([Term| $lhs:stlc_surface_tm + $rhs:stlc_surface_tm ]) => `(Term.add [Term| $lhs] [Term| $rhs])
-        | `([Term| $lhs:stlc_surface_tm * $rhs:stlc_surface_tm ]) => `(Term.mul [Term| $lhs] [Term| $rhs])
-
       variable {lhs rhs t₁ t₂ t₃ t₄: Term}
 
-      example: [Term| ‹lhs› + ‹rhs›] = .add lhs rhs := rfl
-      example: [Term| ‹lhs› * ‹rhs›] = .mul lhs rhs := rfl
+      example: [Term| ‹lhs› + ‹rhs›] = .binOp .add lhs rhs := rfl
+      example: [Term| ‹lhs› * ‹rhs›] = .binOp .mul lhs rhs := rfl
 
-      example: [Term| ‹t₁› + ‹t₂› + ‹t₃›]   = .add (.add t₁ t₂) t₃ := rfl
-      example: [Term| (‹t₁› + ‹t₂›) + ‹t₃›] = .add (.add t₁ t₂) t₃ := rfl
-      example: [Term| ‹t₁› + (‹t₂› + ‹t₃›)] = .add t₁ (.add t₂ t₃) := rfl
-      example: [Term| ‹t₁› * ‹t₂› * ‹t₃›]   = .mul (.mul t₁ t₂) t₃ := rfl
-      example: [Term| (‹t₁› * ‹t₂›) * ‹t₃›] = .mul (.mul t₁ t₂) t₃ := rfl
-      example: [Term| ‹t₁› * (‹t₂› * ‹t₃›)] = .mul t₁ (.mul t₂ t₃) := rfl
+      -- example: [Term| ‹t₁› + ‹t₂› + ‹t₃›]   = .binOp .add (.binOp .add t₁ t₂) t₃ := rfl
+      example: [Term| (‹t₁› + ‹t₂›) + ‹t₃›] = .binOp .add (.binOp .add t₁ t₂) t₃ := rfl
+      example: [Term| ‹t₁› + (‹t₂› + ‹t₃›)] = .binOp .add t₁ (.binOp .add t₂ t₃) := rfl
+      -- example: [Term| ‹t₁› * ‹t₂› * ‹t₃›]   = .binOp .mul (.binOp .mul t₁ t₂) t₃ := rfl
+      example: [Term| (‹t₁› * ‹t₂›) * ‹t₃›] = .binOp .mul (.binOp .mul t₁ t₂) t₃ := rfl
+      example: [Term| ‹t₁› * (‹t₂› * ‹t₃›)] = .binOp .mul t₁ (.binOp .mul t₂ t₃) := rfl
 
-      example: [Term| ‹t₁› + ‹t₂› * ‹t₃›] = .add t₁ (.mul t₂ t₃) := rfl
-      example: [Term| ‹t₁› * ‹t₂› + ‹t₃›] = .add (.mul t₁ t₂) t₃ := rfl
+      example: [Term| ‹t₁› + ‹t₂› * ‹t₃›] = .binOp .add t₁ (.binOp .mul t₂ t₃) := rfl
+      -- example: [Term| ‹t₁› * ‹t₂› + ‹t₃›] = .binOp .add (.binOp .mul t₁ t₂) t₃ := rfl
 
-      example: [Term| ‹t₁› * ‹t₂› + ‹t₃› * ‹t₄›] = .add (.mul t₁ t₂) (.mul t₃ t₄) := rfl
+      -- example: [Term| ‹t₁› * ‹t₂› + ‹t₃› * ‹t₄›] = .binOp .add (.binOp .mul t₁ t₂) (.binOp .mul t₃ t₄) := rfl
     end Arithmetic
 
     section Comparison
-      scoped syntax:50 stlc_surface_tm:50 "<" stlc_surface_tm:50 : stlc_surface_tm
-      scoped syntax:50 stlc_surface_tm:50 "≤" stlc_surface_tm:50 : stlc_surface_tm
-      scoped syntax:50 stlc_surface_tm:50 ">" stlc_surface_tm:50 : stlc_surface_tm
-      scoped syntax:50 stlc_surface_tm:50 "≥" stlc_surface_tm:50 : stlc_surface_tm
-
-      macro_rules
-        | `([Term| $lhs:stlc_surface_tm < $rhs:stlc_surface_tm]) => `(Term.lt  [Term| $lhs] [Term| $rhs])
-        | `([Term| $lhs:stlc_surface_tm ≤ $rhs:stlc_surface_tm]) => `(Term.lte [Term| $lhs] [Term| $rhs])
-        | `([Term| $lhs:stlc_surface_tm > $rhs:stlc_surface_tm]) => `(Term.gt  [Term| $lhs] [Term| $rhs])
-        | `([Term| $lhs:stlc_surface_tm ≥ $rhs:stlc_surface_tm]) => `(Term.gte [Term| $lhs] [Term| $rhs])
-
       variable {lhs rhs: Term}
 
-      example: [Term| ‹lhs› < ‹rhs›] = .lt  lhs rhs := rfl
-      example: [Term| ‹lhs› ≤ ‹rhs›] = .lte lhs rhs := rfl
-      example: [Term| ‹lhs› > ‹rhs›] = .gt  lhs rhs := rfl
-      example: [Term| ‹lhs› ≥ ‹rhs›] = .gte lhs rhs := rfl
+      example: [Term| ‹lhs› < ‹rhs›] = .binOp .lt  lhs rhs := rfl
+      example: [Term| ‹lhs› ≤ ‹rhs›] = .binOp .lte lhs rhs := rfl
+      example: [Term| ‹lhs› > ‹rhs›] = .binOp .gt  lhs rhs := rfl
+      example: [Term| ‹lhs› ≥ ‹rhs›] = .binOp .gte lhs rhs := rfl
     end Comparison
 
     section Conditionals
