@@ -19,7 +19,7 @@ namespace Total.Stlc.Lang.Surface
       theorem deterministic {op: UnOp} {t t₁ t₂: Term}: Eval₁ op t t₁ → Eval₁ op t t₂ → t₁ = t₂
         | .not, .not => rfl
 
-      theorem progress {op: UnOp} {τ₁ τ₂: Ty}: (t₁: Term) → HasType op τ₁ τ₂ → ∃ t₂: Term, Eval₁ op t₁ t₂
+      theorem progress {op: UnOp} {τ₁ τ₂: Ty}: {t₁: Term} → HasType op τ₁ τ₂ → ∃ t₂: Term, Eval₁ op t₁ t₂
         | .bool _, .not => ⟨_, .not⟩
         | _, _ => sorry
 
@@ -64,7 +64,7 @@ namespace Total.Stlc.Lang.Surface
         | .gt,  .gt
         | .gte, .gte => rfl
 
-      theorem progress {op: BinOp} {τ₁ τ₂ τ₃: Ty}: (t₁ t₂: Term) → HasType op τ₁ τ₂ τ₃ → ∃ t₃: Term, Eval₁ op t₁ t₂ t₃
+      theorem progress {op: BinOp} {τ₁ τ₂ τ₃: Ty}: {t₁ t₂: Term} → HasType op τ₁ τ₂ τ₃ → ∃ t₃: Term, Eval₁ op t₁ t₂ t₃
         | .bool _, .bool _, .and => ⟨_, .and⟩
         | .bool _, .bool _, .or  => ⟨_, .or⟩
 
@@ -114,51 +114,51 @@ namespace Total.Stlc.Lang.Surface
 
     namespace Eval₁
       theorem deterministic {t t₁ t₂: Term}: Eval₁ t t₁ → Eval₁ t t₂ → t₁ = t₂
-        | .unOp _ he₁, .unOp _ he₂ => by rw [UnOp.Eval₁.deterministic he₁ he₂]
-        | .unOpOp he₁, .unOpOp he₂ => by rw [deterministic he₁ he₂]
+        | .unOp _ e₁, .unOp _ e₂ => by rw [UnOp.Eval₁.deterministic e₁ e₂]
+        | .unOpOp e₁, .unOpOp e₂ => by rw [deterministic e₁ e₂]
 
-        | .binOp    _ _ he₁, .binOp    _ _ he₂ => by rw [BinOp.Eval₁.deterministic he₁ he₂]
-        | .binOpRight _ he₁, .binOpRight _ he₂
-        | .binOpLeft    he₁, .binOpLeft    he₂ => by rw [deterministic he₁ he₂]
+        | .binOp    _ _ e₁, .binOp    _ _ e₂ => by rw [BinOp.Eval₁.deterministic e₁ e₂]
+        | .binOpRight _ e₁, .binOpRight _ e₂
+        | .binOpLeft    e₁, .binOpLeft    e₂ => by rw [deterministic e₁ e₂]
 
         | .condTrue,  .condTrue
         | .condFalse, .condFalse => rfl
-        | .cond he₁,  .cond he₂  => by rw [deterministic he₁ he₂]
+        | .cond e₁,   .cond e₂   => by rw [deterministic e₁ e₂]
 
         | _, _ => sorry
 
       theorem preservation {τ: Ty} {t₁ t₂: Term}: HasType t₁ τ → Eval₁ t₁ t₂ → HasType t₂ τ
-        | .unOp op _,       .unOp _ he => UnOp.Eval₁.preservation op he
-        | .unOp op operand, .unOpOp he => .unOp op (preservation operand he)
+        | .unOp op _,       .unOp _ e => UnOp.Eval₁.preservation op e
+        | .unOp op operand, .unOpOp e => .unOp op (preservation operand e)
 
-        | .binOp op _ _,     .binOp    _ _ he => BinOp.Eval₁.preservation op he
-        | .binOp op lhs rhs, .binOpRight _ he => .binOp op lhs (preservation rhs he)
-        | .binOp op lhs rhs, .binOpLeft    he => .binOp op (preservation lhs he) rhs
+        | .binOp op _ _,     .binOp    _ _ e => BinOp.Eval₁.preservation op e
+        | .binOp op lhs rhs, .binOpRight _ e => .binOp op lhs (preservation rhs e)
+        | .binOp op lhs rhs, .binOpLeft    e => .binOp op (preservation lhs e) rhs
 
         | .cond _ t _, .condTrue  => t
         | .cond _ _ f, .condFalse => f
-        | .cond c t f, .cond   he => .cond (preservation c he) t f
+        | .cond c t f, .cond e    => .cond (preservation c e) t f
 
       theorem progress {τ: Ty} {t₁: Term}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Term, Eval₁ t₁ t₂
         | .bool => .inl (.bool _)
         | .nat  => .inl (.nat  _)
 
         | .unOp op operand =>
-          match progress operand with
-            | .inl v       => .inr ⟨_, .unOp v⟩
-            | .inr ⟨_, he⟩ => .inr ⟨_, .notOp he⟩
+          match UnOp.Eval₁.progress op, progress operand with
+            | ⟨_, e⟩, .inl v      => .inr ⟨_, .unOp v e⟩
+            | ⟨_, _⟩, .inr ⟨_, e⟩ => .inr ⟨_, .unOpOp e⟩
 
         | .binOp op lhs rhs =>
-          match progress lhs, progress rhs with
-            | .inl hv₁, .inl hv₂ => .inr ⟨_, .binOp hv₁ hv₂ (UnOp.Eval₁ op hv₁ hv₂)⟩
-            | .inl hv,       .inr ⟨_, he⟩  => .inr ⟨_, .binOpRight hv he⟩
-            | .inr ⟨_, he⟩,  _             => .inr ⟨_, .binOpLeft he⟩
+          match BinOp.Eval₁.progress op, progress lhs, progress rhs with
+            | ⟨_, e⟩, .inl v₁,      .inl v₂     => .inr ⟨_, .binOp v₁ v₂ e⟩
+            | _,      .inl v,       .inr ⟨_, e⟩ => .inr ⟨_, .binOpRight v e⟩
+            | _,      .inr ⟨_, e⟩,  _           => .inr ⟨_, .binOpLeft e⟩
 
         | .cond c t f =>
           match progress c with
             | .inl (.bool true)  => .inr ⟨_, .condTrue⟩
             | .inl (.bool false) => .inr ⟨_, .condFalse⟩
-            | .inr ⟨_, he⟩       => .inr ⟨_, .cond he⟩
+            | .inr ⟨_, e⟩        => .inr ⟨_, .cond e⟩
 
       -- TODO: Theorems for Strong Normalization
       theorem confluent {τ: Ty} {t₁ t₂ t₃: Term}: Eval₁ t₁ t₂ → Eval₁ t₁ t₃ → ∃ t₄: Term, Eval₁ t₂ t₄ ∧ Eval₁ t₃ t₄ := sorry
