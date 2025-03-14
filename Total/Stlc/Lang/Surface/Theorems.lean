@@ -11,16 +11,16 @@ namespace Total.Stlc.Lang.Surface
 
   namespace UnOp
     namespace HasType
-      theorem deterministic {op: UnOp} {τ₁ τ₂ τ₃: Ty}: HasType op τ₁ τ₂ → HasType op τ₁ τ₃ → τ₂ = τ₃
-        | .not, .not => rfl
+      theorem deterministic {op: UnOp} {τ₁ τ₂ τ₃ τ₄: Ty}: HasType op τ₁ τ₂ → HasType op τ₃ τ₄ → τ₁ = τ₃ ∧ τ₂ = τ₄
+        | .not, .not => ⟨rfl, rfl⟩
     end HasType
 
     namespace Eval₁
       theorem deterministic {op: UnOp} {t t₁ t₂: Term}: Eval₁ op t t₁ → Eval₁ op t t₂ → t₁ = t₂
         | .not, .not => rfl
 
-      theorem progress {op: UnOp} {τ₁ τ₂: Ty}: {t₁: Term} → HasType op τ₁ τ₂ → ∃ t₂: Term, Eval₁ op t₁ t₂
-        | .bool _, .not => ⟨_, .not⟩
+      theorem progress {op: UnOp} {τ₁ τ₂: Ty}: {t₁: Term} → HasType op τ₁ τ₂ → ∃ t₂: Term, Eval₁ op t₁ t₂ ∧ Term.IsValue t₂
+        | .bool _, .not => ⟨_, ⟨.not, .bool _⟩⟩
         | _, _ => sorry
 
       theorem preservation {op: UnOp} {τ₁ τ₂: Ty} {t₁ t₂: Term}: HasType op τ₁ τ₂ → Eval₁ op t₁ t₂ → Term.HasType t₂ τ₂
@@ -30,20 +30,24 @@ namespace Total.Stlc.Lang.Surface
 
   namespace BinOp
     namespace HasType
-      theorem deterministic {op: BinOp} {τ₁ τ₂ τ₃ τ₄: Ty}: HasType op τ₁ τ₂ τ₃ → HasType op τ₁ τ₂ τ₄ → τ₃ = τ₄
+      theorem deterministic {op: BinOp} {τ₁ τ₂ τ₃ τ₄ τ₅ τ₆: Ty}: HasType op τ₁ τ₂ τ₃ → HasType op τ₄ τ₅ τ₆ → τ₁ = τ₄ ∧ τ₂ = τ₅ ∧ τ₃ = τ₆
         | .and, .and
         | .or,  .or
 
         | .add, .add
         | .mul, .mul
 
-        | .eq,  .eq
-        | .neq, .neq
+        | @HasType.eq .bool,  @HasType.eq  .bool
+        | @HasType.eq .nat,   @HasType.eq  .nat
+        | @HasType.neq .bool, @HasType.neq .bool
+        | @HasType.neq .nat,  @HasType.neq .nat
 
         | .lt,  .lt
         | .lte, .lte
         | .gt,  .gt
-        | .gte, .gte => rfl
+        | .gte, .gte => ⟨rfl, rfl, rfl⟩
+
+        | _, _ => sorry
     end HasType
 
     namespace Eval₁
@@ -64,22 +68,22 @@ namespace Total.Stlc.Lang.Surface
         | .gt,  .gt
         | .gte, .gte => rfl
 
-      theorem progress {op: BinOp} {τ₁ τ₂ τ₃: Ty}: {t₁ t₂: Term} → HasType op τ₁ τ₂ τ₃ → ∃ t₃: Term, Eval₁ op t₁ t₂ t₃
-        | .bool _, .bool _, .and => ⟨_, .and⟩
-        | .bool _, .bool _, .or  => ⟨_, .or⟩
+      theorem progress {op: BinOp} {τ₁ τ₂ τ₃: Ty}: {t₁ t₂: Term} → HasType op τ₁ τ₂ τ₃ → ∃ t₃: Term, Eval₁ op t₁ t₂ t₃ ∧ Term.IsValue t₃
+        | .bool _, .bool _, .and => ⟨_, .and, .bool _⟩
+        | .bool _, .bool _, .or  => ⟨_, .or,  .bool _⟩
 
-        | .nat _, .nat _, .add => ⟨_, .add⟩
-        | .nat _, .nat _, .mul => ⟨_, .mul⟩
+        | .nat _, .nat _, .add => ⟨_, .add, .nat _⟩
+        | .nat _, .nat _, .mul => ⟨_, .mul, .nat _⟩
 
-        | .bool _, .bool _, .eq  => ⟨_, .eqBool⟩
-        | .nat _,  .nat _,  .eq  => ⟨_, .eqNat⟩
-        | .bool _, .bool _, .neq => ⟨_, .neqBool⟩
-        | .nat _,  .nat _,  .neq => ⟨_, .neqNat⟩
+        | .bool _, .bool _, .eq  => ⟨_, .eqBool,  .bool _⟩
+        | .nat _,  .nat _,  .eq  => ⟨_, .eqNat,   .bool _⟩
+        | .bool _, .bool _, .neq => ⟨_, .neqBool, .bool _⟩
+        | .nat _,  .nat _,  .neq => ⟨_, .neqNat,  .bool _⟩
 
-        | .nat _, .nat _, .lt  => ⟨_, .lt⟩
-        | .nat _, .nat _, .lte => ⟨_, .lte⟩
-        | .nat _, .nat _, .gt  => ⟨_, .gt⟩
-        | .nat _, .nat _, .gte => ⟨_, .gte⟩
+        | .nat _, .nat _, .lt  => ⟨_, .lt,  .bool _⟩
+        | .nat _, .nat _, .lte => ⟨_, .lte, .bool _⟩
+        | .nat _, .nat _, .gt  => ⟨_, .gt,  .bool _⟩
+        | .nat _, .nat _, .gte => ⟨_, .gte, .bool _⟩
 
         | _, _, _ => sorry
 
@@ -88,7 +92,7 @@ namespace Total.Stlc.Lang.Surface
         | .or,  .or  => .bool
 
         | .add, .add
-        | .mul, .mul  => .nat
+        | .mul, .mul => .nat
 
         | .eq,  .eqBool
         | .eq,  .eqNat
@@ -107,13 +111,8 @@ namespace Total.Stlc.Lang.Surface
       theorem deterministic {t: Term} {τ₁ τ₂: Ty}: HasType t τ₁ → HasType t τ₂ → τ₁ = τ₂
         | .bool,          .bool
         | .nat,           .nat           => rfl
-        | .unOp op₁ operand₁, .unOp op₂ operand₂   =>
-          have ih := deterministic operand₁ operand₂
-          UnOp.HasType.deterministic op₁ (sorry)
-        | .binOp op₁ lhs₁ lhs₂, .binOp op₂ rhs₁ rhs₂ =>
-          let ih₁ := deterministic lhs₁ rhs₁
-          let ih₂ := deterministic lhs₂ rhs₂
-          BinOp.HasType.deterministic op₁ (sorry)
+        | .unOp  op₁ _,   .unOp  op₂ _   => (UnOp.HasType.deterministic op₁ op₂).right
+        | .binOp op₁ _ _, .binOp op₂ _ _ => (BinOp.HasType.deterministic op₁ op₂).right.right
         | .cond _ t₁ _,   .cond _ t₂ _   => by rw [deterministic t₁ t₂]
     end HasType
 
@@ -150,14 +149,14 @@ namespace Total.Stlc.Lang.Surface
 
         | .unOp op operand =>
           match UnOp.Eval₁.progress op, progress operand with
-            | ⟨_, e⟩, .inl v      => .inr ⟨_, .unOp v e⟩
-            | ⟨_, _⟩, .inr ⟨_, e⟩ => .inr ⟨_, .unOpOp e⟩
+            | ⟨_, e, _⟩, .inl v      => .inr ⟨_, .unOp v e⟩
+            | ⟨_, _, _⟩, .inr ⟨_, e⟩ => .inr ⟨_, .unOpOp e⟩
 
         | .binOp op lhs rhs =>
           match BinOp.Eval₁.progress op, progress lhs, progress rhs with
-            | ⟨_, e⟩, .inl v₁,      .inl v₂     => .inr ⟨_, .binOp v₁ v₂ e⟩
-            | _,      .inl v,       .inr ⟨_, e⟩ => .inr ⟨_, .binOpRight v e⟩
-            | _,      .inr ⟨_, e⟩,  _           => .inr ⟨_, .binOpLeft e⟩
+            | ⟨_, e, _⟩, .inl v₁,      .inl v₂     => .inr ⟨_, .binOp v₁ v₂ e⟩
+            | _,         .inl v,       .inr ⟨_, e⟩ => .inr ⟨_, .binOpRight v e⟩
+            | _,         .inr ⟨_, e⟩,  _           => .inr ⟨_, .binOpLeft e⟩
 
         | .cond c t f =>
           match progress c with
@@ -219,19 +218,18 @@ namespace Total.Stlc.Lang.Surface
         | .nat  => .inl (.nat  _)
 
         | .unOp op operand =>
-          match progress operand with
-            | .inl (.bool _)           => .inr ⟨_, .trans (.unOp op) .refl⟩
-            | .inl hv                  => sorry -- .inr ⟨_, .trans (.andRight hv _) .refl⟩
-            | .inr ⟨_, .refl⟩          => sorry -- .inr ⟨_, .trans (.andLeft _) .refl⟩
-            | .inr ⟨_, .trans hxy hyz⟩ => sorry -- .inr ⟨_, .trans (.andLeft _) .refl⟩
+          match UnOp.Eval₁.progress op, progress operand with
+            | ⟨_, e, v⟩, .inl (.bool _)           => .inr ⟨_, .trans (.unOp (.bool _) e) .refl⟩
+            | ⟨_, e, v⟩, .inr ⟨_, .refl⟩          => sorry -- .inr ⟨_, .trans (.andLeft _) .refl⟩
+            | ⟨_, e, v⟩, .inr ⟨_, .trans hxy hyz⟩ => sorry -- .inr ⟨_, .trans (.andLeft _) .refl⟩
 
         | .binOp op lhs rhs =>
-          match progress lhs, progress rhs with
-            | .inl (.bool _),           .inl (.bool _)           => .inr ⟨_, .trans (.binOp op) .refl⟩
-            | .inl hv,                  .inr ⟨_, .refl⟩          => sorry -- .inr ⟨_, .trans (.andRight hv _) .refl⟩
-            | .inl hv,                  .inr ⟨_, .trans hxy hyz⟩ => sorry -- .inr ⟨_, .trans (.andRight hv hxy) hyz⟩
-            | .inr ⟨_, .refl⟩,          _                        => sorry -- .inr ⟨_, .trans (.andLeft _) .refl⟩
-            | .inr ⟨_, .trans hxy hyz⟩, _                        => sorry -- .inr ⟨_, .trans (.andLeft _) .refl⟩
+          match BinOp.Eval₁.progress op, progress lhs, progress rhs with
+            | ⟨_, e, v⟩, .inl (.bool _),           .inl (.bool _)           => .inr ⟨_, .trans (.binOp op) .refl⟩
+            | ⟨_, e, v⟩, .inl hv,                  .inr ⟨_, .refl⟩          => sorry -- .inr ⟨_, .trans (.andRight hv _) .refl⟩
+            | ⟨_, e, v⟩, .inl hv,                  .inr ⟨_, .trans hxy hyz⟩ => sorry -- .inr ⟨_, .trans (.andRight hv hxy) hyz⟩
+            | ⟨_, e, v⟩, .inr ⟨_, .refl⟩,          _                        => sorry -- .inr ⟨_, .trans (.andLeft _) .refl⟩
+            | ⟨_, e, v⟩, .inr ⟨_, .trans hxy hyz⟩, _                        => sorry -- .inr ⟨_, .trans (.andLeft _) .refl⟩
 
         | .cond c t f =>
           match progress c with
