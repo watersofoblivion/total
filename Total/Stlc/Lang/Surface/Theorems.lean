@@ -24,7 +24,7 @@ namespace Total.Stlc.Lang.Surface
         | .bool _, .not => ⟨_, ⟨.not, .bool _⟩⟩
         | _, _ => sorry
 
-      theorem preservation {op: UnOp} {τ₁ τ₂: Ty} {t₁ t₂: Term}: HasType op τ₁ τ₂ → Eval₁ op t₁ t₂ → Term.HasType t₂ τ₂
+      theorem preservesTyping {op: UnOp} {τ₁ τ₂: Ty} {t₁ t₂: Term}: HasType op τ₁ τ₂ → Eval₁ op t₁ t₂ → Term.HasType t₂ τ₂
         | .not, .not => .bool
     end Eval₁
   end UnOp
@@ -88,7 +88,7 @@ namespace Total.Stlc.Lang.Surface
 
         | _, _, _ => sorry
 
-      theorem preservation {op: BinOp} {τ₁ τ₂ τ₃: Ty} {t₁ t₂ t₃: Term}: HasType op τ₁ τ₂ τ₃ → Eval₁ op t₁ t₂ t₃ → Term.HasType t₃ τ₃
+      theorem preservesTyping {op: BinOp} {τ₁ τ₂ τ₃: Ty} {t₁ t₂ t₃: Term}: HasType op τ₁ τ₂ τ₃ → Eval₁ op t₁ t₂ t₃ → Term.HasType t₃ τ₃
         | .and, .and
         | .or,  .or  => .bool
 
@@ -153,18 +153,6 @@ namespace Total.Stlc.Lang.Surface
 
         | _, _ => sorry
 
-      theorem preservation {τ: Ty} {t₁ t₂: Term}: HasType t₁ τ → Eval₁ t₁ t₂ → HasType t₂ τ
-        | .unOp op _,       .unOp _ e => UnOp.Eval₁.preservation op e
-        | .unOp op operand, .unOpOp e => .unOp op (preservation operand e)
-
-        | .binOp op _ _,     .binOp    _ _ e => BinOp.Eval₁.preservation op e
-        | .binOp op lhs rhs, .binOpRight _ e => .binOp op lhs (preservation rhs e)
-        | .binOp op lhs rhs, .binOpLeft    e => .binOp op (preservation lhs e) rhs
-
-        | .cond _ t _, .condTrue  => t
-        | .cond _ _ f, .condFalse => f
-        | .cond c t f, .cond e    => .cond (preservation c e) t f
-
       theorem progress {τ: Ty} {t₁: Term}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Term, Eval₁ t₁ t₂
         | .bool => .inl (.bool _)
         | .nat  => .inl (.nat  _)
@@ -185,6 +173,18 @@ namespace Total.Stlc.Lang.Surface
             | .inl (.bool true)  => .inr ⟨_, .condTrue⟩
             | .inl (.bool false) => .inr ⟨_, .condFalse⟩
             | .inr ⟨_, e⟩        => .inr ⟨_, .cond e⟩
+
+      theorem preservesTyping {τ: Ty} {t₁ t₂: Term}: HasType t₁ τ → Eval₁ t₁ t₂ → HasType t₂ τ
+        | .unOp op _,       .unOp _ e => UnOp.Eval₁.preservesTyping op e
+        | .unOp op operand, .unOpOp e => .unOp op (preservesTyping operand e)
+
+        | .binOp op _ _,     .binOp    _ _ e => BinOp.Eval₁.preservesTyping op e
+        | .binOp op lhs rhs, .binOpRight _ e => .binOp op lhs (preservesTyping rhs e)
+        | .binOp op lhs rhs, .binOpLeft    e => .binOp op (preservesTyping lhs e) rhs
+
+        | .cond _ t _, .condTrue  => t
+        | .cond _ _ f, .condFalse => f
+        | .cond c t f, .cond e    => .cond (preservesTyping c e) t f
 
       theorem preservesHalting {t₁ t₂: Term} (he: Eval₁ t₁ t₂): Halts t₁ ↔ Halts t₂ :=
         ⟨a he, b he⟩
@@ -210,39 +210,6 @@ namespace Total.Stlc.Lang.Surface
           -- by
           --   sorry
 
-      theorem preservation {τ: Ty} {t₁ t₂: Term}: HasType t₁ τ → Eval t₁ t₂ → HasType t₂ τ
-        | .bool, .refl          => .bool
-        | .bool, .trans hxy hyz => sorry
-
-        | .nat, .refl          => .nat
-        | .nat, .trans hxy hyz => sorry
-
-        | .unOp op operand, .refl => .unOp op (preservation operand .refl)
-        | .unOp op _, .trans (.unOp _ operand) hyz => sorry
-        | .unOp op _, .trans (.unOpOp he)      hyz => sorry
-
-        | .binOp op lhs rhs, .refl                       => .binOp op (preservation lhs .refl) (preservation rhs .refl)
-        | .binOp op lhs rhs, .trans (.binOp o l r) .refl =>
-          have ih := BinOp.Eval₁.preservation op _
-          have ih₁ := preservation lhs .refl
-          have ih₂ := preservation rhs .refl
-          .binOp ih ih₁ ih₂
-        | .binOp op lhs rhs, .trans (.binOpRight hv he) hyz   =>
-          have h := BinOp.Eval₁.preservation op _
-          have ih := preservation (Eval₁.preservation rhs he) (.trans he hyz)
-          sorry
-        | .binOp op lhs rhs, .trans (.binOpLeft he)     hyz   =>
-          have h := BinOp.Eval₁.preservation op _
-          have ih := preservation (Eval₁.preservation lhs he) (.trans he hyz)
-          sorry
-
-        -- | .cond c t f, .refl                 => .cond (preservation c .refl) (preservation t .refl) (preservation f .refl)
-        -- | .cond c t f, .trans .condTrue  hyz => sorry
-        -- | .cond c t f, .trans (@Eval₁.condFalse .(t₁) .(t₂)) hyz => sorry
-        -- | .cond c t f, .trans (.cond he) hyz => sorry
-
-        | _, _ => sorry
-
       theorem progress {τ: Ty} {t₁: Term}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Term, Eval t₁ t₂
         | .bool => .inl (.bool _)
         | .nat  => .inl (.nat  _)
@@ -265,6 +232,39 @@ namespace Total.Stlc.Lang.Surface
           match progress c with
             | .inl hv      => sorry
             | .inr ⟨_, he⟩ => sorry
+
+      theorem preservesTyping {τ: Ty} {t₁ t₂: Term}: HasType t₁ τ → Eval t₁ t₂ → HasType t₂ τ
+        | .bool, .refl          => .bool
+        | .bool, .trans hxy hyz => sorry
+
+        | .nat, .refl          => .nat
+        | .nat, .trans hxy hyz => sorry
+
+        | .unOp op operand, .refl => .unOp op (preservesTyping operand .refl)
+        | .unOp op _, .trans (.unOp _ operand) hyz => sorry
+        | .unOp op _, .trans (.unOpOp he)      hyz => sorry
+
+        | .binOp op lhs rhs, .refl                       => .binOp op (preservesTyping lhs .refl) (preservesTyping rhs .refl)
+        | .binOp op lhs rhs, .trans (.binOp o l r) .refl =>
+          have ih := BinOp.Eval₁.preservesTyping op _
+          have ih₁ := preservesTyping lhs .refl
+          have ih₂ := preservesTyping rhs .refl
+          .binOp ih ih₁ ih₂
+        | .binOp op lhs rhs, .trans (.binOpRight hv he) hyz   =>
+          have h := BinOp.Eval₁.preservesTyping op _
+          have ih := preservesTyping (Eval₁.preservesTyping rhs he) (.trans he hyz)
+          sorry
+        | .binOp op lhs rhs, .trans (.binOpLeft he)     hyz   =>
+          have h := BinOp.Eval₁.preservesTyping op _
+          have ih := preservesTyping (Eval₁.preservesTyping lhs he) (.trans he hyz)
+          sorry
+
+        -- | .cond c t f, .refl                 => .cond (preservation c .refl) (preservation t .refl) (preservation f .refl)
+        -- | .cond c t f, .trans .condTrue  hyz => sorry
+        -- | .cond c t f, .trans (@Eval₁.condFalse .(t₁) .(t₂)) hyz => sorry
+        -- | .cond c t f, .trans (.cond he) hyz => sorry
+
+        | _, _ => sorry
 
       theorem preservesTotality {τ: Ty} {t₁ t₂: Term} (he: Eval t₁ t₂): Total τ t₁ ↔ Total τ t₂ :=
         ⟨a he, b he⟩
@@ -302,11 +302,11 @@ namespace Total.Stlc.Lang.Surface
       theorem deterministic {t t₁ t₂: Top}: Eval₁ t t₁ → Eval₁ t t₂ → t₁ = t₂
         | h, _ => nomatch h
 
-      theorem preservation {τ: Ty} {t₁ t₂: Top}: HasType t₁ τ → Eval₁ t₁ t₂ → HasType t₂ τ
-        | h, _ => nomatch h
-
       theorem progress {τ: Ty} {t₁: Top}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Top, Eval₁ t₁ t₂
         | h => nomatch h
+
+      theorem preservesTyping {τ: Ty} {t₁ t₂: Top}: HasType t₁ τ → Eval₁ t₁ t₂ → HasType t₂ τ
+        | h, _ => nomatch h
 
       theorem preservesHalting {t₁ t₂: Top} (he: Eval₁ t₁ t₂): Halts t₁ ↔ Halts t₂ :=
         ⟨a he, b he⟩
@@ -327,11 +327,11 @@ namespace Total.Stlc.Lang.Surface
       theorem deterministic {t t₁ t₂: Top}: Eval t t₁ → Eval t t₂ → t₁ = t₂
         | h, _ => nomatch h
 
-      theorem preservation {τ: Ty} {t₁ t₂: Top}: HasType t₁ τ → Eval t₁ t₂ → HasType t₂ τ
-        | h, _ => nomatch h
-
       theorem progress {τ: Ty} {t₁: Top}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Top, Eval t₁ t₂
         | h => nomatch h
+
+      theorem preservesTyping {τ: Ty} {t₁ t₂: Top}: HasType t₁ τ → Eval t₁ t₂ → HasType t₂ τ
+        | h, _ => nomatch h
 
       theorem preservesTotality {τ: Ty} {t₁ t₂: Top} (he: Eval t₁ t₂): Total τ t₁ ↔ Total τ t₂ :=
         ⟨a he, b he⟩
