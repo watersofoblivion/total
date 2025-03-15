@@ -6,6 +6,7 @@ import Total.Stlc.Lang.Surface.Semantics
 
 namespace Total.Stlc.Lang.Surface
   set_option maxHeartbeats 10000000
+
   namespace Ty
   end Ty
 
@@ -107,6 +108,27 @@ namespace Total.Stlc.Lang.Surface
   end BinOp
 
   namespace Term
+    @[reducible]
+    def Halts (t₁: Term): Prop := ∃ t₂: Term, Eval t₁ t₂ ∧ IsValue t₂
+
+    namespace IsValue
+      theorem halts {t: Term}: IsValue t → Halts t
+        | .bool _ => ⟨_, .refl, .bool _⟩
+        | .nat  _ => ⟨_, .refl, .nat  _⟩
+    end IsValue
+
+    @[reducible]
+    def Total: Ty → Term → Prop
+      | .bool, t => Halts t
+      | .nat,  t => Halts t
+
+    namespace Total
+      theorem halts {τ: Ty}: {t: Term} → Halts t
+        | .bool _ => IsValue.halts (.bool _)
+        | .nat  _ => IsValue.halts (.nat  _)
+        | _       => sorry
+    end Total
+
     namespace HasType
       theorem deterministic {t: Term} {τ₁ τ₂: Ty}: HasType t τ₁ → HasType t τ₂ → τ₁ = τ₂
         | .bool,          .bool
@@ -164,9 +186,17 @@ namespace Total.Stlc.Lang.Surface
             | .inl (.bool false) => .inr ⟨_, .condFalse⟩
             | .inr ⟨_, e⟩        => .inr ⟨_, .cond e⟩
 
-      -- TODO: Theorems for Strong Normalization
-      theorem confluent {τ: Ty} {t₁ t₂ t₃: Term}: Eval₁ t₁ t₂ → Eval₁ t₁ t₃ → ∃ t₄: Term, Eval₁ t₂ t₄ ∧ Eval₁ t₃ t₄ := sorry
-      theorem strongly_normalizing {τ: Ty} {t₁: Term}: IsValue t₁ ∨ ∃ t₂: Term, Eval₁ t₁ t₂ := sorry
+      theorem preservesHalting {t₁ t₂: Term} (he: Eval₁ t₁ t₂): Halts t₁ ↔ Halts t₂ :=
+        ⟨a he, b he⟩
+        where
+          a {t₁ t₂: Term}: Eval₁ t₁ t₂ → Halts t₁ → Halts t₂ := sorry
+          b {t₁ t₂: Term}: Eval₁ t₁ t₂ → Halts t₂ → Halts t₁ := sorry
+
+      theorem preservesTotality {τ: Ty} {t₁ t₂: Term} (he: Eval₁ t₁ t₂): Total τ t₁ ↔ Total τ t₂ :=
+        ⟨a he, b he⟩
+        where
+          a {τ: Ty} {t₁ t₂: Term}: Eval₁ t₁ t₂ → Total τ t₁ → Total τ t₂ := sorry
+          b {τ: Ty} {t₁ t₂: Term}: Eval₁ t₁ t₂ → Total τ t₂ → Total τ t₁ := sorry
     end Eval₁
 
     namespace Eval
@@ -235,10 +265,34 @@ namespace Total.Stlc.Lang.Surface
           match progress c with
             | .inl hv      => sorry
             | .inr ⟨_, he⟩ => sorry
+
+      theorem preservesTotality {τ: Ty} {t₁ t₂: Term} (he: Eval t₁ t₂): Total τ t₁ ↔ Total τ t₂ :=
+        ⟨a he, b he⟩
+        where
+          a {τ: Ty} {t₁ t₂: Term}: Eval t₁ t₂ → Total τ t₁ → Total τ t₂ := sorry
+          b {τ: Ty} {t₁ t₂: Term}: Eval t₁ t₂ → Total τ t₂ → Total τ t₁ := sorry
+
+      theorem normalization {τ: Ty} {t: Term}: Halts t := sorry
     end Eval
   end Term
 
   namespace Top
+    @[reducible]
+    def Halts (t₁: Top): Prop := ∃ t₂: Top, Eval t₁ t₂ ∧ IsValue t₂
+
+    namespace IsValue
+      theorem halts {t: Top}: IsValue t → Halts t := nomatch t
+    end IsValue
+
+    @[reducible]
+    def Total: Ty → Top → Prop
+      | .bool, t => nomatch t
+
+    namespace Total
+      theorem halts {τ: Ty}: Top → Halts t
+        | t => nomatch t
+    end Total
+
     namespace HasType
       theorem deterministic {t: Top} {τ₁ τ₂: Ty}: HasType t τ₁ → HasType t τ₂ → τ₁ = τ₂
         | h, _ => nomatch h
@@ -253,6 +307,20 @@ namespace Total.Stlc.Lang.Surface
 
       theorem progress {τ: Ty} {t₁: Top}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Top, Eval₁ t₁ t₂
         | h => nomatch h
+
+      theorem preservesHalting {t₁ t₂: Top} (he: Eval₁ t₁ t₂): Halts t₁ ↔ Halts t₂ :=
+        ⟨a he, b he⟩
+        where
+          a {t₁ t₂: Top}: Eval₁ t₁ t₂ → Halts t₁ → Halts t₂
+            | h, _ => nomatch h
+          b {t₁ t₂: Top}: Eval₁ t₁ t₂ → Halts t₂ → Halts t₁
+            | h, _ => nomatch h
+
+      theorem preservesTotality {τ: Ty} {t₁ t₂: Top} (he: Eval₁ t₁ t₂): Total τ t₁ ↔ Total τ t₂ :=
+        ⟨a he, b he⟩
+        where
+          a {τ: Ty} {t₁ t₂: Top}: Eval₁ t₁ t₂ → Total τ t₁ → Total τ t₂ := sorry
+          b {τ: Ty} {t₁ t₂: Top}: Eval₁ t₁ t₂ → Total τ t₂ → Total τ t₁ := sorry
     end Eval₁
 
     namespace Eval
@@ -264,6 +332,17 @@ namespace Total.Stlc.Lang.Surface
 
       theorem progress {τ: Ty} {t₁: Top}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Top, Eval t₁ t₂
         | h => nomatch h
+
+      theorem preservesTotality {τ: Ty} {t₁ t₂: Top} (he: Eval t₁ t₂): Total τ t₁ ↔ Total τ t₂ :=
+        ⟨a he, b he⟩
+        where
+          a {τ: Ty} {t₁ t₂: Top}: Eval t₁ t₂ → Total τ t₁ → Total τ t₂
+            | h, _ => nomatch h
+
+          b {τ: Ty} {t₁ t₂: Top}: Eval t₁ t₂ → Total τ t₂ → Total τ t₁
+            | h, _ => nomatch h
+
+      theorem normalization {τ: Ty} {t: Top}: Halts t := nomatch t
     end Eval
   end Top
 end Total.Stlc.Lang.Surface
