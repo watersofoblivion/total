@@ -1,6 +1,8 @@
 import Total.Stlc.Lang.Surface.Grammar
 import Total.Stlc.Lang.Surface.Syntax
 
+set_option autoImplicit false
+
 namespace Total.Stlc.Lang.Surface
   def Env: Type := String → Option Ty
 

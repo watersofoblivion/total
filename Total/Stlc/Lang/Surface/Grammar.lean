@@ -1,3 +1,5 @@
+set_option autoImplicit false
+
 namespace Total.Stlc.Lang.Surface
   inductive Ty: Type where
     | bool: Ty

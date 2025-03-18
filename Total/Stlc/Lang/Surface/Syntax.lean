@@ -1,5 +1,7 @@
 import Total.Stlc.Lang.Surface.Grammar
 
+set_option autoImplicit false
+
 namespace Total.Stlc.Lang.Surface
   declare_syntax_cat stlc_surface_ty
   declare_syntax_cat stlc_surface_un_op
@@ -111,7 +113,6 @@ namespace Total.Stlc.Lang.Surface
         | `([Term| ‹ $t:term › ])            => `($(Lean.quote t))
         | `([Term| ( $t:stlc_surface_tm ) ]) => `([Term| $t])
 
-      variable {v: Value}
       variable {t: Term}
 
       example: [Term| ‹t›]        = t := rfl
@@ -128,6 +129,8 @@ namespace Total.Stlc.Lang.Surface
         | `([Term| fls ])              => `(Term.bool false)
         | `([Term| ‹bool: $b:term › ]) => `(Term.bool $(Lean.quote b))
 
+      variable {b: Bool}
+
       example: [Term| tru]      = @Term.bool true  := rfl
       example: [Term| fls]      = @Term.bool false := rfl
       example: [Term| ‹bool:b›] = @Term.bool b     := rfl
@@ -140,6 +143,8 @@ namespace Total.Stlc.Lang.Surface
       macro_rules
         | `([Term| $n:num ])          => `(Term.nat $n)
         | `([Term| ‹nat: $n:term › ]) => `(Term.nat $(Lean.quote n))
+
+      variable {n: Nat}
 
       example: [Term| 0]       = @Term.nat 0 := rfl
       example: [Term| 1]       = @Term.nat 1 := rfl
@@ -154,7 +159,7 @@ namespace Total.Stlc.Lang.Surface
         | `([Term| $op:stlc_surface_un_op $operand:stlc_surface_tm]) => `(Term.unOp [UnOp| $op] [Term| $operand])
 
       variable {op: UnOp}
-      variable {t₁: Term}
+      variable {t: Term}
 
       example: [Term| ‹un:op› ‹t›] = .unOp op t := rfl
     end UnOp

@@ -3,6 +3,8 @@ import Total.Relation
 import Total.Stlc.Lang.Surface.Grammar
 import Total.Stlc.Lang.Surface.Syntax
 
+set_option autoImplicit false
+
 namespace Total.Stlc.Lang.Surface
   section Types
   end Types
@@ -169,7 +171,7 @@ namespace Total.Stlc.Lang.Surface
     end IsValue
 
     namespace Total
-      theorem halts {τ: Ty}: Top → Halts t
+      theorem halts {τ: Ty} {t: Top}: Top → Halts t
         | t => nomatch t
     end Total
   end Top

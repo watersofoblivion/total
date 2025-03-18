@@ -4,9 +4,9 @@ import Total.Stlc.Lang.Surface.Grammar
 import Total.Stlc.Lang.Surface.Syntax
 import Total.Stlc.Lang.Surface.Semantics
 
-namespace Total.Stlc.Lang.Surface
-  set_option maxHeartbeats 10000000
+set_option autoImplicit false
 
+namespace Total.Stlc.Lang.Surface
   namespace Ty
   end Ty
 
@@ -41,7 +41,23 @@ namespace Total.Stlc.Lang.Surface
           mp  {τ₁ τ₂: Ty} {op: UnOp} {t₁ t₂: Term}: Eval₁ op t₁ t₂ → Total τ₁ τ₂ op t₁ → Term.Total τ₂ t₂
             | .not, ⟨.not, _, t⟩ => ⟨.bool, Term.IsValue.halts (.bool _), t⟩
           mpr {τ₁ τ₂: Ty} {op: UnOp} {t₁ t₂: Term}: HasType op τ₁ τ₂ → Eval₁ op t₁ t₂ → Term.Total τ₂ t₂ → Total τ₁ τ₂ op t₁
-            | .not, .not, ⟨.bool, ⟨_, hh⟩, troo⟩ => ⟨.not, ⟨.not, sorry, sorry⟩, troo⟩
+            | .not, .not, ⟨.bool, ⟨_, he, hv⟩, t⟩ =>
+
+              -- @[reducible]
+              -- def Total (τ: Ty) (t: Term): Prop :=
+              --   (HasType t τ) ∧ (Halts t) ∧ (
+              --     match τ with
+              --       | .bool => True
+              --       | .nat  => True
+              --   )
+
+              -- @[reducible]
+              -- def Total (τ₁ τ₂: Ty) (op: UnOp) (t: Term): Prop :=
+              --   (HasType op τ₁ τ₂) ∧ (Halts op t) ∧ True
+
+              -- have ht := preservesTyping .not .not
+              -- ⟨.not, ⟨.unOp .not _, sorry, sorry⟩, t⟩
+              sorry
     end Eval₁
   end UnOp
 
@@ -385,8 +401,10 @@ namespace Total.Stlc.Lang.Surface
       theorem preservesTotality {τ: Ty} {t₁ t₂: Top} (ht: HasType t₁ τ) (he: Eval₁ t₁ t₂): Total τ t₁ ↔ Total τ t₂ :=
         ⟨mp he, mpr ht he⟩
         where
-          mp {τ: Ty} {t₁ t₂: Top}: Eval₁ t₁ t₂ → Total τ t₁ → Total τ t₂ := sorry
-          mpr {τ: Ty} {t₁ t₂: Top}: HasType t₁ τ → Eval₁ t₁ t₂ → Total τ t₂ → Total τ t₁ := sorry
+          mp {τ: Ty} {t₁ t₂: Top}: Eval₁ t₁ t₂ → Total τ t₁ → Total τ t₂
+            | h, _ => nomatch h
+          mpr {τ: Ty} {t₁ t₂: Top}: HasType t₁ τ → Eval₁ t₁ t₂ → Total τ t₂ → Total τ t₁
+            | h, _, _ => nomatch h
     end Eval₁
 
     namespace Eval
