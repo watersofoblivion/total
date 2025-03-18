@@ -3,6 +3,7 @@ import Total.Relation
 import Total.Stlc.Lang.Surface.Grammar
 import Total.Stlc.Lang.Surface.Syntax
 import Total.Stlc.Lang.Surface.Semantics
+import Total.Stlc.Lang.Surface.Termination
 
 set_option autoImplicit false
 

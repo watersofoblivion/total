@@ -23,9 +23,9 @@ section Functions
     | nil (ty: τ): Domain τ 1
     | cons {α: Nat} (ty: τ) (rest: Domain τ α): Domain τ α.succ
 
-  inductive Formals (ι: Type) (τ: Type): (α: Nat) → Domain τ α → Type where
-    | nil (id: ι) (ty: τ): Formals ι τ 1 (.nil ty)
-    | cons {α: Nat} {δ: Domain τ α} (id: ι) (ty: τ) (rest: Formals ι τ α δ): Formals ι τ α.succ (.cons ty δ)
+  inductive Params (ι: Type) (τ: Type): (α: Nat) → Domain τ α → Type where
+    | nil (id: ι) (ty: τ): Params ι τ 1 (.nil ty)
+    | cons {α: Nat} {δ: Domain τ α} (id: ι) (ty: τ) (rest: Params ι τ α δ): Params ι τ α.succ (.cons ty δ)
 
   inductive Args (τ: Type) (μ: τ → Type): (α: Nat) → Domain τ α → Type where
     | nil {ty: τ} (arg: μ ty): Args τ μ 1 (.nil ty)

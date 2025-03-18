@@ -2,6 +2,8 @@ import Total.Core
 
 import Total.Stlc.Lang.Annotated.Grammar
 
+set_option autoImplicit false
+
 namespace Total.Stlc.Lang.Annotated
   declare_syntax_cat stlc_annot_ty
   declare_syntax_cat stlc_term_ty
