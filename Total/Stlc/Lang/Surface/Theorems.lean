@@ -11,21 +11,9 @@ namespace Total.Stlc.Lang.Surface
   end Ty
 
   namespace UnOp
-    @[reducible]
-    def Halts (op: UnOp) (t₁: Term): Prop := ∃ t₂: Term, Eval₁ op t₁ t₂ ∧ Term.IsValue t₂
-
-    @[reducible]
-    def Total (τ₁ τ₂: Ty) (op: UnOp) (t: Term): Prop :=
-      (HasType op τ₁ τ₂) ∧ (Halts op t) ∧ True
-
-    namespace Total
-      theorem halts {τ₁ τ₂: Ty} {op: UnOp} {t: Term}: Total τ₁ τ₂ op t → Halts op t
-        | ⟨_, hh, _⟩ => hh
-    end Total
-
     namespace HasType
-      theorem deterministic {op: UnOp} {τ₁ τ₂ τ₃ τ₄: Ty}: HasType op τ₁ τ₂ → HasType op τ₃ τ₄ → τ₁ = τ₃ ∧ τ₂ = τ₄
-        | .not, .not => ⟨rfl, rfl⟩
+      theorem deterministic {op: UnOp} {τ τ₁ τ₂: Ty}: HasType op τ τ₁ → HasType op τ τ₂ → τ₁ = τ₂
+        | .not, .not => rfl
     end HasType
 
     namespace Eval₁
@@ -33,60 +21,46 @@ namespace Total.Stlc.Lang.Surface
         | .not, .not => rfl
 
       theorem progress {op: UnOp} {τ₁ τ₂: Ty}: {t₁: Term} → HasType op τ₁ τ₂ → ∃ t₂: Term, Eval₁ op t₁ t₂ ∧ Term.IsValue t₂
-        | .bool _, .not => ⟨_, ⟨.not, .bool _⟩⟩
+        | .bool _, .not => ⟨_, .not, .bool _⟩
         | _, _ => sorry
 
       theorem preservesTyping {op: UnOp} {τ₁ τ₂: Ty} {t₁ t₂: Term}: HasType op τ₁ τ₂ → Eval₁ op t₁ t₂ → Term.HasType t₂ τ₂
         | .not, .not => .bool
 
-      -- theorem preservesHalting {t₁ t₂: Term} (he: Eval₁ t₁ t₂): Halts t₁ ↔ Halts t₂ :=
-
-      theorem preservesHalting {op: UnOp} {t₁ t₂: Term} (he: Eval₁ op t₁ t₂): Halts op t₁ ↔ Halts op t₂ :=
+      theorem preservesHalting {op: UnOp} {t₁ t₂: Term} (he: Eval₁ op t₁ t₂): Halts op t₁ ↔ Term.Halts t₂ :=
         ⟨mp he, mpr he⟩
         where
-          mp  {op: UnOp} {t₁ t₂: Term} (he: Eval₁ op t₁ t₂): Halts op t₁ → Halts op t₂ := sorry
-          mpr {op: UnOp} {t₁ t₂: Term} (he: Eval₁ op t₁ t₂): Halts op t₂ → Halts op t₁ := sorry
+          mp  {op: UnOp} {t₁ t₂: Term}: Eval₁ op t₁ t₂ → Halts op t₁ → Term.Halts t₂
+            | .not, ⟨_, .not, .bool _⟩ => ⟨_, .refl, .bool _⟩
+          mpr {op: UnOp} {t₁ t₂: Term}: Eval₁ op t₁ t₂ → Term.Halts t₂ → Halts op t₁
+            | .not, ⟨_, .refl, .bool _⟩ => ⟨_, .not, .bool _⟩
 
-      theorem preservesTotality {τ₁ τ₂: Ty} {op: UnOp} {t₁ t₂: Term} (ht: HasType op τ₁ τ₂) (he: Eval₁ op t₁ t₂): Total τ₁ τ₂ op t₁ ↔ Total τ₁ τ₂ op t₂ :=
-        ⟨mp ht he, mpr ht he⟩
+      theorem preservesTotality {τ₁ τ₂: Ty} {op: UnOp} {t₁ t₂: Term} (ht: HasType op τ₁ τ₂) (he: Eval₁ op t₁ t₂): Total τ₁ τ₂ op t₁ ↔ Term.Total τ₂ t₂ :=
+        ⟨mp he, mpr ht he⟩
         where
-          mp  {τ₁ τ₂: Ty} {op: UnOp} {t₁ t₂: Term} (ht: HasType op τ₁ τ₂) (he: Eval₁ op t₁ t₂): Total τ₁ τ₂ op t₁ → Total τ₁ τ₂ op t₂ := sorry
-          mpr {τ₁ τ₂: Ty} {op: UnOp} {t₁ t₂: Term} (ht: HasType op τ₁ τ₂) (he: Eval₁ op t₁ t₂): Total τ₁ τ₂ op t₂ → Total τ₁ τ₂ op t₁ := sorry
+          mp  {τ₁ τ₂: Ty} {op: UnOp} {t₁ t₂: Term}: Eval₁ op t₁ t₂ → Total τ₁ τ₂ op t₁ → Term.Total τ₂ t₂
+            | .not, ⟨.not, _, t⟩ => ⟨.bool, Term.IsValue.halts (.bool _), t⟩
+          mpr {τ₁ τ₂: Ty} {op: UnOp} {t₁ t₂: Term}: HasType op τ₁ τ₂ → Eval₁ op t₁ t₂ → Term.Total τ₂ t₂ → Total τ₁ τ₂ op t₁
+            | .not, .not, ⟨.bool, ⟨_, hh⟩, troo⟩ => ⟨.not, ⟨.not, sorry, sorry⟩, troo⟩
     end Eval₁
   end UnOp
 
   namespace BinOp
-    @[reducible]
-    def Halts (op: BinOp) (t₁ t₂: Term): Prop := ∃ t₃: Term, Eval₁ op t₁ t₂ t₃ ∧ Term.IsValue t₃
-
-    @[reducible]
-    def Total (τ₁ τ₂ τ₃: Ty) (op: BinOp) (t₁ t₂: Term): Prop :=
-      (HasType op τ₁ τ₂ τ₃) ∧ (Halts op t₁ t₂) ∧ True
-
-    namespace Total
-      theorem halts {τ₁ τ₂ τ₃: Ty} {op: BinOp} {t₁ t₂: Term}: Total τ₁ τ₂ τ₃ op t₁ t₂ → Halts op t₁ t₂
-        | ⟨_, hh, _⟩ => hh
-    end Total
-
     namespace HasType
-      theorem deterministic {op: BinOp} {τ₁ τ₂ τ₃ τ₄ τ₅ τ₆: Ty}: HasType op τ₁ τ₂ τ₃ → HasType op τ₄ τ₅ τ₆ → τ₁ = τ₄ ∧ τ₂ = τ₅ ∧ τ₃ = τ₆
+      theorem deterministic {op: BinOp} {τ₁ τ₂ τ₃ τ₄: Ty}: HasType op τ₁ τ₂ τ₃ → HasType op τ₁ τ₂ τ₄ → τ₃ = τ₄
         | .and, .and
         | .or,  .or
 
         | .add, .add
         | .mul, .mul
 
-        | @HasType.eq .bool,  @HasType.eq  .bool
-        | @HasType.eq .nat,   @HasType.eq  .nat
-        | @HasType.neq .bool, @HasType.neq .bool
-        | @HasType.neq .nat,  @HasType.neq .nat
+        | .eq,  .eq
+        | .neq, .neq
 
         | .lt,  .lt
         | .lte, .lte
         | .gt,  .gt
-        | .gte, .gte => ⟨rfl, rfl, rfl⟩
-
-        | _, _ => sorry
+        | .gte, .gte => rfl
     end HasType
 
     namespace Eval₁
@@ -143,55 +117,72 @@ namespace Total.Stlc.Lang.Surface
         | .gt,  .gt
         | .gte, .gte => .bool
 
-      theorem preservesHalting {op: BinOp} {t₁ t₂ t₃: Term} (he: Eval₁ op t₁ t₂ t₃): Halts op t₁ t₂ ↔ Halts op t₁ t₂ :=
+      theorem preservesHalting {op: BinOp} {t₁ t₂ t₃: Term} (he: Eval₁ op t₁ t₂ t₃): Halts op t₁ t₂ ↔ Term.Halts t₃ :=
         ⟨mp he, mpr he⟩
         where
-          mp  {op: BinOp} {t₁ t₂ t₃: Term} (he: Eval₁ op t₁ t₂ t₃): Halts op t₁ t₂ → Halts op t₁ t₂ := sorry
-          mpr {op: BinOp} {t₁ t₂ t₃: Term} (he: Eval₁ op t₁ t₂ t₃): Halts op t₁ t₂ → Halts op t₁ t₂ := sorry
+          mp  {op: BinOp} {t₁ t₂ t₃: Term}: Eval₁ op t₁ t₂ t₃ → Halts op t₁ t₂ → Term.Halts t₃
+            | .and,     ⟨_, .and,     .bool _⟩ => ⟨_, .refl, .bool  _⟩
+            | .or,      ⟨_, .or,      .bool _⟩ => ⟨_, .refl, .bool  _⟩
+            | .add,     ⟨_, .add,     .nat  _⟩ => ⟨_, .refl, .nat   _⟩
+            | .mul,     ⟨_, .mul,     .nat  _⟩ => ⟨_, .refl, .nat   _⟩
+            | .eqBool,  ⟨_, .eqBool,  .bool _⟩ => ⟨_, .refl, .bool  _⟩
+            | .eqNat,   ⟨_, .eqNat,   .bool _⟩ => ⟨_, .refl, .bool  _⟩
+            | .neqBool, ⟨_, .neqBool, .bool _⟩ => ⟨_, .refl, .bool  _⟩
+            | .neqNat,  ⟨_, .neqNat,  .bool _⟩ => ⟨_, .refl, .bool  _⟩
+            | .lt,      ⟨_, .lt,      .bool _⟩ => ⟨_, .refl, .bool  _⟩
+            | .lte,     ⟨_, .lte,     .bool _⟩ => ⟨_, .refl, .bool  _⟩
+            | .gt,      ⟨_, .gt,      .bool _⟩ => ⟨_, .refl, .bool  _⟩
+            | .gte,     ⟨_, .gte,     .bool _⟩ => ⟨_, .refl, .bool  _⟩
+          mpr {op: BinOp} {t₁ t₂ t₃: Term}: Eval₁ op t₁ t₂ t₃ → Term.Halts t₃ → Halts op t₁ t₂
+            | .and,     ⟨_, .refl, .bool _⟩ => ⟨_, .and,     .bool  _⟩
+            | .or,      ⟨_, .refl, .bool _⟩ => ⟨_, .or,      .bool  _⟩
+            | .add,     ⟨_, .refl, .nat  _⟩ => ⟨_, .add,     .nat   _⟩
+            | .mul,     ⟨_, .refl, .nat  _⟩ => ⟨_, .mul,     .nat   _⟩
+            | .eqBool,  ⟨_, .refl, .bool _⟩ => ⟨_, .eqBool,  .bool  _⟩
+            | .eqNat,   ⟨_, .refl, .bool _⟩ => ⟨_, .eqNat,   .bool  _⟩
+            | .neqBool, ⟨_, .refl, .bool _⟩ => ⟨_, .neqBool, .bool  _⟩
+            | .neqNat,  ⟨_, .refl, .bool _⟩ => ⟨_, .neqNat,  .bool  _⟩
+            | .lt,      ⟨_, .refl, .bool _⟩ => ⟨_, .lt,      .bool  _⟩
+            | .lte,     ⟨_, .refl, .bool _⟩ => ⟨_, .lte,     .bool  _⟩
+            | .gt,      ⟨_, .refl, .bool _⟩ => ⟨_, .gt,      .bool  _⟩
+            | .gte,     ⟨_, .refl, .bool _⟩ => ⟨_, .gte,     .bool  _⟩
 
-      theorem preservesTotality {τ₁ τ₂ τ₃: Ty} {op: BinOp} {t₁ t₂ t₃: Term} (ht: HasType op τ₁ τ₂ τ₃) (he: Eval₁ op t₁ t₂ t₃): Total τ₁ τ₂ τ₃ op t₁ t₂ ↔ Total τ₁ τ₂ τ₃ op t₁ t₂ :=
-        ⟨mp ht he, mpr ht he⟩
+      theorem preservesTotality {τ₁ τ₂ τ₃: Ty} {op: BinOp} {t₁ t₂ t₃: Term} (ht: HasType op τ₁ τ₂ τ₃) (he: Eval₁ op t₁ t₂ t₃): Total τ₁ τ₂ τ₃ op t₁ t₂ ↔ Term.Total τ₃ t₃ :=
+        ⟨mp he, mpr ht he⟩
         where
-          mp  {τ₁ τ₂ τ₃: Ty} {op: BinOp} {t₁ t₂ t₃: Term} (ht: HasType op τ₁ τ₂ τ₃) (he: Eval₁ op t₁ t₂ t₃): Total τ₁ τ₂ τ₃ op t₁ t₂ → Total τ₁ τ₂ τ₃ op t₁ t₂ := sorry
-          mpr {τ₁ τ₂ τ₃: Ty} {op: BinOp} {t₁ t₂ t₃: Term} (ht: HasType op τ₁ τ₂ τ₃) (he: Eval₁ op t₁ t₂ t₃): Total τ₁ τ₂ τ₃ op t₁ t₂ → Total τ₁ τ₂ τ₃ op t₁ t₂ := sorry
+          mp  {τ₁ τ₂ τ₃: Ty} {op: BinOp} {t₁ t₂ t₃: Term}: Eval₁ op t₁ t₂ t₃ → Total τ₁ τ₂ τ₃ op t₁ t₂ → Term.Total τ₃ t₃
+            | .and,     ⟨.and, _, t⟩ => ⟨.bool, Term.IsValue.halts (.bool _), t⟩
+            | .or,      ⟨.or,  _, t⟩ => ⟨.bool, Term.IsValue.halts (.bool _), t⟩
+            | .add,     ⟨.add, _, t⟩ => ⟨.nat,  Term.IsValue.halts (.nat  _), t⟩
+            | .mul,     ⟨.mul, _, t⟩ => ⟨.nat,  Term.IsValue.halts (.nat  _), t⟩
+            | .eqBool,  ⟨.eq,  _, t⟩ => ⟨.bool, Term.IsValue.halts (.bool _), t⟩
+            | .eqNat,   ⟨.eq,  _, t⟩ => ⟨.bool, Term.IsValue.halts (.bool _), t⟩
+            | .neqBool, ⟨.neq, _, t⟩ => ⟨.bool, Term.IsValue.halts (.bool _), t⟩
+            | .neqNat,  ⟨.neq, _, t⟩ => ⟨.bool, Term.IsValue.halts (.bool _), t⟩
+            | .lt,      ⟨.lt,  _, t⟩ => ⟨.bool, Term.IsValue.halts (.bool _), t⟩
+            | .lte,     ⟨.lte, _, t⟩ => ⟨.bool, Term.IsValue.halts (.bool _), t⟩
+            | .gt,      ⟨.gt,  _, t⟩ => ⟨.bool, Term.IsValue.halts (.bool _), t⟩
+            | .gte,     ⟨.gte, _, t⟩ => ⟨.bool, Term.IsValue.halts (.bool _), t⟩
+          mpr {τ₁ τ₂ τ₃: Ty} {op: BinOp} {t₁ t₂ t₃: Term}: HasType op τ₁ τ₂ τ₃ → Eval₁ op t₁ t₂ t₃ → Term.Total τ₃ t₃ → Total τ₁ τ₂ τ₃ op t₁ t₂ := sorry
     end Eval₁
   end BinOp
 
   namespace Term
-    @[reducible]
-    def Halts (t₁: Term): Prop := ∃ t₂: Term, Eval t₁ t₂ ∧ IsValue t₂
-
-    namespace IsValue
-      theorem halts {t: Term}: IsValue t → Halts t
-        | .bool _ => ⟨_, .refl, .bool _⟩
-        | .nat  _ => ⟨_, .refl, .nat  _⟩
-    end IsValue
-
-    @[reducible]
-    def Total (τ: Ty) (t: Term): Prop :=
-      (HasType t τ) ∧ (Halts t) ∧ (
-        match τ with
-          | .bool => True
-          | .nat  => True
-      )
-
-    namespace Total
-      theorem halts {τ: Ty}: {t: Term} → Total τ t → Halts t
-        | .bool _, _ => IsValue.halts (.bool _)
-        | .nat _,  _ => IsValue.halts (.nat  _)
-
-        | .unOp _ _,    ⟨_, ⟨_, he, hv⟩, _⟩
-        | .binOp _ _ _, ⟨_, ⟨_, he, hv⟩, _⟩
-
-        | .cond _ _ _,  ⟨_, ⟨_, he, hv⟩, _⟩ => ⟨_, he, hv⟩
-    end Total
-
     namespace HasType
       theorem deterministic {t: Term} {τ₁ τ₂: Ty}: HasType t τ₁ → HasType t τ₂ → τ₁ = τ₂
         | .bool,          .bool
         | .nat,           .nat           => rfl
-        | .unOp  op₁ _,   .unOp  op₂ _   => (UnOp.HasType.deterministic op₁ op₂).right
-        | .binOp op₁ _ _, .binOp op₂ _ _ => (BinOp.HasType.deterministic op₁ op₂).right.right
+        | .unOp  op₁ operand₁,   .unOp  op₂ operand₂   =>
+          have ih₁ := deterministic operand₁ operand₂
+          by -- TODO: Eliminate this tactic block
+            rw [ih₁] at op₁
+            apply UnOp.HasType.deterministic op₁ op₂
+        | .binOp op₁ lhs₁ rhs₁, .binOp op₂ lhs₂ rhs₂ =>
+          have ih₁ := deterministic lhs₁ lhs₂
+          have ih₂ := deterministic rhs₁ rhs₂
+          by -- TODO: Eliminate this tactic block
+            rw [ih₁, ih₂] at op₁
+            apply BinOp.HasType.deterministic op₁ op₂
         | .cond _ t₁ _,   .cond _ t₂ _   => by rw [deterministic t₁ t₂]
     end HasType
 
@@ -248,9 +239,11 @@ namespace Total.Stlc.Lang.Surface
         where
           -- ∃ t₂: Term, Eval t₁ t₂ ∧ IsValue t₂
           mp {t₁ t₂: Term}: Eval₁ t₁ t₂ → Halts t₁ → Halts t₂
-            | .unOp (.bool _) .not, _ => ⟨_, .refl, .bool _⟩
+            | .unOp v e, h =>
+              have ⟨mp, mpr⟩ := UnOp.Eval₁.preservesHalting e
+              sorry
 
-            | .unOpOp he₁, ⟨_, .trans he₂ he₃, hv⟩  => ⟨_, .trans _ he₂, hv⟩
+            | .unOpOp he₁, ⟨t, .trans he₂ he₃, hv⟩  => sorry
 
             | .binOp (.bool _) (.bool _) .and,    _
             | .binOp (.bool _) (.bool _) .or,     _ => ⟨_, .refl, .bool _⟩
@@ -263,21 +256,23 @@ namespace Total.Stlc.Lang.Surface
             | .binOp (.nat _)  (.nat _)  .gt,     _
             | .binOp (.nat _)  (.nat _)  .gte,    _ => ⟨_, .refl, .bool _⟩
 
-            | .binOpRight _ _, h      => ⟨_, sorry, sorry⟩
-            | .binOpLeft _, h         => ⟨_, sorry, sorry⟩
+            | .binOpRight vl he₁, ⟨_, .trans he₂ he₃, hv⟩ => sorry
+            | .binOpLeft     he₁, ⟨_, .trans he₂ he₃, hv⟩ => sorry
 
-            | .cond _, h              => ⟨_, sorry, sorry⟩
-            | .condTrue, ⟨_, he, _⟩            => ⟨_, sorry, sorry⟩
-            | .condFalse, h           => ⟨_, sorry, sorry⟩
-          mpr {t₁ t₂: Term}: Eval₁ t₁ t₂ → Halts t₂ → Halts t₁
-            | .unOp (.bool _) .not, _ => ⟨_, .refl, .bool _⟩
-            | .unOpOp e, ⟨_, he, hv⟩  => ⟨_, .trans (.unOpOp e) he, hv⟩
-            | .binOp _ _ _, h         => ⟨_, sorry, sorry⟩
-            | .binOpRight _ _, h      => ⟨_, sorry, sorry⟩
-            | .binOpLeft _, h         => ⟨_, sorry, sorry⟩
-            | .cond _, h              => ⟨_, sorry, sorry⟩
-            | .condTrue, h            => ⟨_, sorry, sorry⟩
-            | .condFalse, h           => ⟨_, sorry, sorry⟩
+            | .cond _, h              => sorry -- ⟨_, sorry, sorry⟩
+            | .condTrue, ⟨_, he, _⟩   => sorry -- ⟨_, sorry, sorry⟩
+            | .condFalse, h           => sorry -- ⟨_, sorry, sorry⟩
+
+            | _, _ => sorry
+          mpr {t₁ t₂: Term}: Eval₁ t₁ t₂ → Halts t₂ → Halts t₁ := sorry
+          --   | .unOp (.bool _) .not, _ => ⟨_, .refl, .bool _⟩
+          --   | .unOpOp e, ⟨_, he, hv⟩  => ⟨_, .trans (.unOpOp e) he, hv⟩
+          --   | .binOp _ _ _, h         => ⟨_, sorry, sorry⟩
+          --   | .binOpRight _ _, h      => ⟨_, sorry, sorry⟩
+          --   | .binOpLeft _, h         => ⟨_, sorry, sorry⟩
+          --   | .cond _, h              => ⟨_, sorry, sorry⟩
+          --   | .condTrue, h            => ⟨_, sorry, sorry⟩
+          --   | .condFalse, h           => ⟨_, sorry, sorry⟩
 
       theorem preservesTotality {τ: Ty} {t₁ t₂: Term} (ht: HasType t₁ τ) (he: Eval₁ t₁ t₂): Total τ t₁ ↔ Total τ t₂ :=
         ⟨mp he, mpr ht he⟩
@@ -364,22 +359,6 @@ namespace Total.Stlc.Lang.Surface
   end Term
 
   namespace Top
-    @[reducible]
-    def Halts (t₁: Top): Prop := ∃ t₂: Top, Eval t₁ t₂ ∧ IsValue t₂
-
-    namespace IsValue
-      theorem halts {t: Top}: IsValue t → Halts t := nomatch t
-    end IsValue
-
-    @[reducible]
-    def Total: Ty → Top → Prop
-      | .bool, t => nomatch t
-
-    namespace Total
-      theorem halts {τ: Ty}: Top → Halts t
-        | t => nomatch t
-    end Total
-
     namespace HasType
       theorem deterministic {t: Top} {τ₁ τ₂: Ty}: HasType t τ₁ → HasType t τ₂ → τ₁ = τ₂
         | h, _ => nomatch h
