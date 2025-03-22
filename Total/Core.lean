@@ -27,7 +27,7 @@ section Functions
     | nil (id: ι) (ty: τ): Params ι τ 1 (.nil ty)
     | cons {α: Nat} {δ: Domain τ α} (id: ι) (ty: τ) (rest: Params ι τ α δ): Params ι τ α.succ (.cons ty δ)
 
-  inductive Args (τ: Type) (μ: τ → Type): (α: Nat) → Domain τ α → Type where
-    | nil {ty: τ} (arg: μ ty): Args τ μ 1 (.nil ty)
-    | cons {α: Nat} {δ: Domain τ α} {τy: τ} (arg: μ ty) (rest: Args τ μ α δ): Args τ μ α.succ (.cons ty δ)
+  inductive Args (τ: Type): (α: Nat) → Domain τ α → Type where
+    | nil {ty: τ} (arg: τ): Args τ 1 (.nil ty)
+    | cons {α: Nat} {δ: Domain τ α} {τy: τ} (arg: ty) (rest: Args τ α δ): Args τ α.succ (.cons ty δ)
 end Functions

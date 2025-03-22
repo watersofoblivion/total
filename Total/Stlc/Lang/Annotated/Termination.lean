@@ -10,15 +10,15 @@ set_option autoImplicit false
 namespace Total.Stlc.Lang.Annotated
   namespace PrimOp
     @[reducible]
-    def Halts (τ: Ty) (p: PrimOp) (t₁: Term τ): Prop := ∃ t₂: Term τ, Eval₁ t₁ t₂ ∧ Term.IsValue t₂
+    def Halts {α: Nat} {δ: Domain Ty α} {π: Params String Ty α δ} {τ: Ty} (op: PrimOp α δ τ) (args: Args Ty π α): Prop := ∃ t₂: Term τ, Eval₁ (.primOp op args) t₂ ∧ Term.IsValue t₂
 
     @[reducible]
-    def Total (τ₁ τ₂: Ty) (op: UnOp) (t: Term): Prop :=
-      (HasType op τ₁ τ₂) ∧ (Halts op t) ∧ True
+    def Total {α: Nat} {δ: Domain Ty α} {τ: Ty} (op: PrimOp α δ τ) (t: Args Ty α δ): Prop :=
+      (Halts op t) ∧ True
 
     namespace Total
-      theorem halts {τ₁ τ₂: Ty} {op: UnOp} {t: Term}: Total τ₁ τ₂ op t → Halts op t
-        | ⟨_, hh, _⟩ => hh
+      theorem halts {α: Nat} {δ: Domain Ty α} {τ: Ty} {op: PrimOp α δ τ} {t: Term τ}: Total op t → Halts op t
+        | ⟨hh, _⟩ => hh
     end Total
   end PrimOp
 
@@ -46,7 +46,7 @@ namespace Total.Stlc.Lang.Annotated
         | .bool _, _ => IsValue.halts (.bool _)
         | .nat _,  _ => IsValue.halts (.nat  _)
 
-        | .primOp _, _ => sorry
+        | .primOp _ _, _ => sorry
 
         | .cond _ _ _,  ⟨_, ⟨_, he, hv⟩, _⟩ => ⟨_, he, hv⟩
     end Total

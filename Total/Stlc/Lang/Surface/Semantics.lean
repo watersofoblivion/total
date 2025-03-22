@@ -15,8 +15,6 @@ namespace Total.Stlc.Lang.Surface
 
     inductive Eval₁: UnOp → Term → Term → Prop where
       | not {operand: Bool}: Eval₁ .not (.bool operand) (.bool !operand)
-
-    -- def Eval := RTC Eval₁
   end UnOp
 
   namespace BinOp
@@ -45,8 +43,6 @@ namespace Total.Stlc.Lang.Surface
       | lte {lhs rhs: Nat}: Eval₁ .lte [Term| ‹nat:lhs›] [Term| ‹nat:rhs›] [Term| ‹bool:lhs ≤ rhs›]
       | gt  {lhs rhs: Nat}: Eval₁ .gt  [Term| ‹nat:lhs›] [Term| ‹nat:rhs›] [Term| ‹bool:lhs > rhs›]
       | gte {lhs rhs: Nat}: Eval₁ .gte [Term| ‹nat:lhs›] [Term| ‹nat:rhs›] [Term| ‹bool:lhs ≥ rhs›]
-
-    -- def Eval := RTC Eval₁
   end BinOp
 
   namespace Term
@@ -90,7 +86,7 @@ namespace Total.Stlc.Lang.Surface
       -- | appArgs {fn: Term} {args: ArgList} (h₁: IsValue fn)
       -- | appFn {fn₁ fn₂: Term} {args: ArgList ρ} (h: Eval₁ fn₁ fn₂): Eval₁ (.app fn₁ args) (.app fn₂ args)
 
-    def Eval := RTC Eval₁
+    abbrev Eval := RTC Eval₁
   end Term
 
   namespace Top
