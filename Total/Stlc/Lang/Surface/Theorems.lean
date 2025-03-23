@@ -21,9 +21,8 @@ namespace Total.Stlc.Lang.Surface
       theorem deterministic {op: UnOp} {t t₁ t₂: Term}: Eval₁ op t t₁ → Eval₁ op t t₂ → t₁ = t₂
         | .not, .not => rfl
 
-      theorem progress {op: UnOp} {τ₁ τ₂: Ty}: {t₁: Term} → HasType op τ₁ τ₂ → ∃ t₂: Term, Eval₁ op t₁ t₂ ∧ Term.IsValue t₂
+      theorem progress {op: UnOp} {τ₁ τ₂: Ty} {t₁: Term} (_: Term.HasType t₁ τ₁): Term.IsValue t₁ → HasType op τ₁ τ₂ → ∃ t₂: Term, Eval₁ op t₁ t₂ ∧ Term.IsValue t₂
         | .bool _, .not => ⟨_, .not, .bool _⟩
-        | _, _ => sorry
 
       theorem preservesTyping {op: UnOp} {τ₁ τ₂: Ty} {t₁ t₂: Term}: HasType op τ₁ τ₂ → Eval₁ op t₁ t₂ → Term.HasType t₂ τ₂
         | .not, .not => .bool
@@ -98,7 +97,7 @@ namespace Total.Stlc.Lang.Surface
         | .gt,  .gt
         | .gte, .gte => rfl
 
-      theorem progress {op: BinOp} {τ₁ τ₂ τ₃: Ty}: {t₁ t₂: Term} → HasType op τ₁ τ₂ τ₃ → ∃ t₃: Term, Eval₁ op t₁ t₂ t₃ ∧ Term.IsValue t₃
+      theorem progress {op: BinOp} {τ₁ τ₂ τ₃: Ty} {t₁ t₂: Term} (_: Term.HasType t₁ τ₁) (_: Term.HasType t₂ τ₂): Term.IsValue t₁ → Term.IsValue t₂ → HasType op τ₁ τ₂ τ₃ → ∃ t₃: Term, Eval₁ op t₁ t₂ t₃ ∧ Term.IsValue t₃
         | .bool _, .bool _, .and => ⟨_, .and, .bool _⟩
         | .bool _, .bool _, .or  => ⟨_, .or,  .bool _⟩
 
@@ -114,8 +113,6 @@ namespace Total.Stlc.Lang.Surface
         | .nat _, .nat _, .lte => ⟨_, .lte, .bool _⟩
         | .nat _, .nat _, .gt  => ⟨_, .gt,  .bool _⟩
         | .nat _, .nat _, .gte => ⟨_, .gte, .bool _⟩
-
-        | _, _, _ => sorry
 
       theorem preservesTyping {op: BinOp} {τ₁ τ₂ τ₃: Ty} {t₁ t₂ t₃: Term}: HasType op τ₁ τ₂ τ₃ → Eval₁ op t₁ t₂ t₃ → Term.HasType t₃ τ₃
         | .and, .and
@@ -191,13 +188,15 @@ namespace Total.Stlc.Lang.Surface
         | .nat,           .nat           => rfl
         | .unOp  op₁ operand₁,   .unOp  op₂ operand₂   =>
           have ih₁ := deterministic operand₁ operand₂
-          by -- TODO: Eliminate this tactic block
+          -- TODO: Eliminate this tactic block
+          by
             rw [ih₁] at op₁
             exact UnOp.HasType.deterministic op₁ op₂
         | .binOp op₁ lhs₁ rhs₁, .binOp op₂ lhs₂ rhs₂ =>
           have ih₁ := deterministic lhs₁ lhs₂
           have ih₂ := deterministic rhs₁ rhs₂
-          by -- TODO: Eliminate this tactic block
+          -- TODO: Eliminate this tactic block
+          by
             rw [ih₁, ih₂] at op₁
             exact BinOp.HasType.deterministic op₁ op₂
         | .cond _ t₁ _,   .cond _ t₂ _   => by rw [deterministic t₁ t₂]
@@ -223,15 +222,19 @@ namespace Total.Stlc.Lang.Surface
         | .nat  => .inl (.nat  _)
 
         | .unOp op operand =>
-          match UnOp.Eval₁.progress op, progress operand with
-            | ⟨_, e, _⟩, .inl v      => .inr ⟨_, .unOp v e⟩
-            | ⟨_, _, _⟩, .inr ⟨_, e⟩ => .inr ⟨_, .unOpOp e⟩
+          match progress operand with
+            | .inl v =>
+              have ⟨_, e, _⟩ := UnOp.Eval₁.progress operand v op
+              .inr ⟨_, .unOp v e⟩
+            | .inr ⟨_, e⟩ => .inr ⟨_, .unOpOp e⟩
 
         | .binOp op lhs rhs =>
-          match BinOp.Eval₁.progress op, progress lhs, progress rhs with
-            | ⟨_, e, _⟩, .inl v₁,      .inl v₂     => .inr ⟨_, .binOp v₁ v₂ e⟩
-            | _,         .inl v,       .inr ⟨_, e⟩ => .inr ⟨_, .binOpRight v e⟩
-            | _,         .inr ⟨_, e⟩,  _           => .inr ⟨_, .binOpLeft e⟩
+          match progress lhs, progress rhs with
+            | .inl v₁,      .inl v₂     =>
+              have ⟨_, e, _⟩ := BinOp.Eval₁.progress lhs rhs v₁ v₂ op
+              .inr ⟨_, .binOp v₁ v₂ e⟩
+            | .inl v,       .inr ⟨_, e⟩ => .inr ⟨_, .binOpRight v e⟩
+            | .inr ⟨_, e⟩,  _           => .inr ⟨_, .binOpLeft e⟩
 
         | .cond c t f =>
           match progress c with
@@ -254,7 +257,6 @@ namespace Total.Stlc.Lang.Surface
       theorem preservesHalting {t₁ t₂: Term} (he: Eval₁ t₁ t₂): Halts t₁ ↔ Halts t₂ :=
         ⟨mp he, mpr he⟩
         where
-          -- ∃ t₂: Term, Eval t₁ t₂ ∧ IsValue t₂
           mp {t₁ t₂: Term}: Eval₁ t₁ t₂ → Halts t₁ → Halts t₂
             | .unOp (.bool _) .not, _ => ⟨_, .refl, .bool _⟩
 
@@ -276,8 +278,8 @@ namespace Total.Stlc.Lang.Surface
             | .binOpRight vl he₁, ⟨_, .trans he₂ he₃, hv⟩ => sorry
             | .binOpLeft     he₁, ⟨_, .trans he₂ he₃, hv⟩ => sorry
 
-            | .cond _, h              => sorry -- ⟨_, sorry, sorry⟩
-            | .condTrue, ⟨_, he, _⟩   => sorry -- ⟨_, sorry, sorry⟩
+            | .cond _,    h           => sorry -- ⟨_, sorry, sorry⟩
+            | .condTrue,  ⟨_, he, _⟩  => sorry -- ⟨_, sorry, sorry⟩
             | .condFalse, h           => sorry -- ⟨_, sorry, sorry⟩
 
             | _, _ => sorry
@@ -305,7 +307,8 @@ namespace Total.Stlc.Lang.Surface
         | .trans _ _,       .refl            => sorry
         | .trans hxy₁ hyz₁, .trans hxy₂ hyz₂ =>
           have ih := Eval₁.deterministic hxy₁ hxy₂
-          by -- TODO: Eliminate this tactic block
+          -- TODO: Eliminate this tactic block
+          by
             rw [ih] at hyz₁
             exact deterministic hyz₁ hyz₂
 
@@ -318,23 +321,11 @@ namespace Total.Stlc.Lang.Surface
             ⟨_, .trans e₁ e₂, v⟩
 
       theorem preservesTyping {τ: Ty} {t₁ t₂: Term} (h: HasType t₁ τ): Eval t₁ t₂ → HasType t₂ τ
-        | .refl => h
+        | .refl          => h
         | .trans hxy hyz =>
           have ih := Eval₁.preservesTyping h hxy
           preservesTyping ih hyz
 
-      /-
-      @[reducible]
-      def Halts (t₁: Term): Prop := ∃ t₂: Term, Eval t₁ t₂ ∧ IsValue t₂
-
-      @[reducible]
-      def Total (τ: Ty) (t: Term): Prop :=
-        (HasType t τ) ∧ (Halts t) ∧ (
-          match τ with
-            | .bool => True
-            | .nat  => True
-        )
-      -/
       theorem preservesTotality {τ: Ty} {t₁ t₂: Term} (ht: HasType t₁ τ) (he: Eval t₁ t₂): Total τ t₁ ↔ Total τ t₂ :=
         ⟨mp he, mpr ht he⟩
         where
@@ -344,68 +335,46 @@ namespace Total.Stlc.Lang.Surface
               have ih := Eval₁.preservesTotality ht hxy |>.mp ⟨ht, hh, t⟩
               mp hyz ih
           mpr {τ: Ty} {t₁ t₂: Term} (h₁: HasType t₁ τ): Eval t₁ t₂ → Total τ t₂ → Total τ t₁
-            | .refl,          t           => t
-            | .trans hxy hyz, ⟨ht, hh, t⟩ => sorry
-              -- have ih := Eval₁.preservesTotality h₁ hxy |>.mpr ⟨sorry, sorry, t⟩
-              -- mpr sorry sorry sorry
+            | .refl,          t => t
+            | .trans hxy hyz, t =>
+              have ih₁ := Eval₁.preservesTyping h₁ hxy
+              have ih₂ := mpr ih₁ hyz t
+              Eval₁.preservesTotality h₁ hxy |>.mpr ih₂
 
-
-      theorem normalization {τ: Ty} {t: Term}: Halts t := sorry
+      theorem normalization {τ: Ty} {t: Term}: HasType t τ → Halts t := sorry
     end Eval
   end Term
 
   namespace Top
     namespace HasType
-      theorem deterministic {t: Top} {τ₁ τ₂: Ty}: HasType t τ₁ → HasType t τ₂ → τ₁ = τ₂
-        | h, _ => nomatch h
+      theorem deterministic {t: Top} {τ₁ τ₂: Ty}: HasType t τ₁ → HasType t τ₂ → τ₁ = τ₂ := nomatch t
     end HasType
 
     namespace Eval₁
-      theorem deterministic {t t₁ t₂: Top}: Eval₁ t t₁ → Eval₁ t t₂ → t₁ = t₂
-        | h, _ => nomatch h
-
-      theorem progress {τ: Ty} {t₁: Top}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Top, Eval₁ t₁ t₂
-        | h => nomatch h
-
-      theorem preservesTyping {τ: Ty} {t₁ t₂: Top}: HasType t₁ τ → Eval₁ t₁ t₂ → HasType t₂ τ
-        | h, _ => nomatch h
-
+      theorem deterministic {t t₁ t₂: Top}: Eval₁ t t₁ → Eval₁ t t₂ → t₁ = t₂ := nomatch t
+      theorem progress {τ: Ty} {t₁: Top}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Top, Eval₁ t₁ t₂ := nomatch t₁
+      theorem preservesTyping {τ: Ty} {t₁ t₂: Top}: HasType t₁ τ → Eval₁ t₁ t₂ → HasType t₂ τ := nomatch t₁
       theorem preservesHalting {t₁ t₂: Top} (he: Eval₁ t₁ t₂): Halts t₁ ↔ Halts t₂ :=
         ⟨mp he, mpr he⟩
         where
-          mp {t₁ t₂: Top}: Eval₁ t₁ t₂ → Halts t₁ → Halts t₂
-            | h, _ => nomatch h
-          mpr {t₁ t₂: Top}: Eval₁ t₁ t₂ → Halts t₂ → Halts t₁
-            | h, _ => nomatch h
-
+          mp {t₁ t₂: Top}: Eval₁ t₁ t₂ → Halts t₁ → Halts t₂ := nomatch t₁
+          mpr {t₁ t₂: Top}: Eval₁ t₁ t₂ → Halts t₂ → Halts t₁ := nomatch t₁
       theorem preservesTotality {τ: Ty} {t₁ t₂: Top} (ht: HasType t₁ τ) (he: Eval₁ t₁ t₂): Total τ t₁ ↔ Total τ t₂ :=
         ⟨mp he, mpr ht he⟩
         where
-          mp {τ: Ty} {t₁ t₂: Top}: Eval₁ t₁ t₂ → Total τ t₁ → Total τ t₂
-            | h, _ => nomatch h
-          mpr {τ: Ty} {t₁ t₂: Top}: HasType t₁ τ → Eval₁ t₁ t₂ → Total τ t₂ → Total τ t₁
-            | h, _, _ => nomatch h
+          mp {τ: Ty} {t₁ t₂: Top}: Eval₁ t₁ t₂ → Total τ t₁ → Total τ t₂ := nomatch t₁
+          mpr {τ: Ty} {t₁ t₂: Top}: HasType t₁ τ → Eval₁ t₁ t₂ → Total τ t₂ → Total τ t₁ := nomatch t₁
     end Eval₁
 
     namespace Eval
-      theorem deterministic {t t₁ t₂: Top}: Eval t t₁ → Eval t t₂ → t₁ = t₂
-        | h, _ => nomatch h
-
-      theorem progress {τ: Ty} {t₁: Top}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Top, Eval t₁ t₂
-        | h => nomatch h
-
-      theorem preservesTyping {τ: Ty} {t₁ t₂: Top}: HasType t₁ τ → Eval t₁ t₂ → HasType t₂ τ
-        | h, _ => nomatch h
-
+      theorem deterministic {t t₁ t₂: Top}: Eval t t₁ → Eval t t₂ → t₁ = t₂ := nomatch t
+      theorem progress {τ: Ty} {t₁: Top}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Top, Eval t₁ t₂ := nomatch t₁
+      theorem preservesTyping {τ: Ty} {t₁ t₂: Top}: HasType t₁ τ → Eval t₁ t₂ → HasType t₂ τ := nomatch t₁
       theorem preservesTotality {τ: Ty} {t₁ t₂: Top} (ht: HasType t₁ τ) (he: Eval t₁ t₂): Total τ t₁ ↔ Total τ t₂ :=
         ⟨mp he, mpr ht he⟩
         where
-          mp {τ: Ty} {t₁ t₂: Top}: Eval t₁ t₂ → Total τ t₁ → Total τ t₂
-            | h, _ => nomatch h
-
-          mpr {τ: Ty} {t₁ t₂: Top}: HasType t₁ τ → Eval t₁ t₂ → Total τ t₂ → Total τ t₁
-            | h, _ => nomatch h
-
+          mp {τ: Ty} {t₁ t₂: Top}: Eval t₁ t₂ → Total τ t₁ → Total τ t₂ := nomatch t₁
+          mpr {τ: Ty} {t₁ t₂: Top}: HasType t₁ τ → Eval t₁ t₂ → Total τ t₂ → Total τ t₁ := nomatch t₁
       theorem normalization {τ: Ty} {t: Top}: Halts t := nomatch t
     end Eval
   end Top

@@ -55,13 +55,11 @@ namespace Total.Stlc.Lang.Surface
 
     namespace Total
       theorem halts {τ: Ty}: {t: Term} → Total τ t → Halts t
-        | .bool _, _ => IsValue.halts (.bool _)
-        | .nat _,  _ => IsValue.halts (.nat  _)
-
-        | .unOp _ _,    ⟨_, ⟨_, he, hv⟩, _⟩
+        | .bool  _,     _                   => IsValue.halts (.bool _)
+        | .nat   _,     _                   => IsValue.halts (.nat  _)
+        | .unOp  _ _,   ⟨_, ⟨_, he, hv⟩, _⟩
         | .binOp _ _ _, ⟨_, ⟨_, he, hv⟩, _⟩
-
-        | .cond _ _ _,  ⟨_, ⟨_, he, hv⟩, _⟩ => ⟨_, he, hv⟩
+        | .cond  _ _ _, ⟨_, ⟨_, he, hv⟩, _⟩ => ⟨_, he, hv⟩
     end Total
   end Term
 
