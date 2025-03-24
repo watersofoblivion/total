@@ -12,42 +12,50 @@ namespace Total.Stlc.Lang.Surface
   end Ty
 
   namespace UnOp
+    variable {τ τ₁ τ₂: Ty}
+    variable {op: UnOp}
+    variable {t t₁ t₂: Term}
+
     namespace HasType
-      theorem deterministic {op: UnOp} {τ τ₁ τ₂: Ty}: HasType op τ τ₁ → HasType op τ τ₂ → τ₁ = τ₂
+      theorem deterministic: HasType op τ τ₁ → HasType op τ τ₂ → τ₁ = τ₂
         | .not, .not => rfl
     end HasType
 
     namespace Eval₁
-      theorem deterministic {op: UnOp} {t t₁ t₂: Term}: Eval₁ op t t₁ → Eval₁ op t t₂ → t₁ = t₂
+      theorem deterministic: Eval₁ op t t₁ → Eval₁ op t t₂ → t₁ = t₂
         | .not, .not => rfl
 
-      theorem progress {op: UnOp} {τ₁ τ₂: Ty} {t₁: Term} (_: Term.HasType t₁ τ₁): Term.IsValue t₁ → HasType op τ₁ τ₂ → ∃ t₂: Term, Eval₁ op t₁ t₂ ∧ Term.IsValue t₂
+      theorem progress (_: Term.HasType t₁ τ₁): Term.IsValue t₁ → HasType op τ₁ τ₂ → ∃ t₂: Term, Eval₁ op t₁ t₂ ∧ Term.IsValue t₂
         | .bool _, .not => ⟨_, .not, .bool _⟩
 
-      theorem preservesTyping {op: UnOp} {τ₁ τ₂: Ty} {t₁ t₂: Term}: HasType op τ₁ τ₂ → Eval₁ op t₁ t₂ → Term.HasType t₂ τ₂
+      theorem preservesTyping: HasType op τ₁ τ₂ → Eval₁ op t₁ t₂ → Term.HasType t₂ τ₂
         | .not, .not => .bool
 
-      theorem preservesHalting {op: UnOp} {t₁ t₂: Term} (he: Eval₁ op t₁ t₂): Halts op t₁ ↔ Term.Halts t₂ :=
+      theorem preservesHalting (he: Eval₁ op t₁ t₂): Halts op t₁ ↔ Term.Halts t₂ :=
         ⟨mp he, mpr he⟩
         where
-          mp  {op: UnOp} {t₁ t₂: Term}: Eval₁ op t₁ t₂ → Halts op t₁ → Term.Halts t₂
+          mp: Eval₁ op t₁ t₂ → Halts op t₁ → Term.Halts t₂
             | .not, ⟨_, .not, .bool _⟩ => ⟨_, .refl, .bool _⟩
-          mpr {op: UnOp} {t₁ t₂: Term}: Eval₁ op t₁ t₂ → Term.Halts t₂ → Halts op t₁
+          mpr: Eval₁ op t₁ t₂ → Term.Halts t₂ → Halts op t₁
             | .not, ⟨_, .refl, .bool _⟩ => ⟨_, .not, .bool _⟩
 
-      theorem preservesTotality {τ₁ τ₂: Ty} {op: UnOp} {t₁ t₂: Term} (ht: HasType op τ₁ τ₂) (he: Eval₁ op t₁ t₂): Total τ₁ τ₂ op t₁ ↔ Term.Total τ₂ t₂ :=
+      theorem preservesTotality (ht: HasType op τ₁ τ₂) (he: Eval₁ op t₁ t₂): Total τ₁ τ₂ op t₁ ↔ Term.Total τ₂ t₂ :=
         ⟨mp he, mpr ht he⟩
         where
-          mp  {τ₁ τ₂: Ty} {op: UnOp} {t₁ t₂: Term}: Eval₁ op t₁ t₂ → Total τ₁ τ₂ op t₁ → Term.Total τ₂ t₂
+          mp: Eval₁ op t₁ t₂ → Total τ₁ τ₂ op t₁ → Term.Total τ₂ t₂
             | .not, ⟨.not, _, _⟩ => ⟨.bool, Term.IsValue.halts (.bool _), True.intro⟩
-          mpr {τ₁ τ₂: Ty} {op: UnOp} {t₁ t₂: Term}: HasType op τ₁ τ₂ → Eval₁ op t₁ t₂ → Term.Total τ₂ t₂ → Total τ₁ τ₂ op t₁
+          mpr: HasType op τ₁ τ₂ → Eval₁ op t₁ t₂ → Term.Total τ₂ t₂ → Total τ₁ τ₂ op t₁
             | .not, .not, ⟨.bool, _, _⟩ => ⟨.not, ⟨_, .not, .bool _⟩ , True.intro⟩
     end Eval₁
   end UnOp
 
   namespace BinOp
+    variable {τ τ₁ τ₂ τ₃ τ₄: Ty}
+    variable {op: BinOp}
+    variable {t t₁ t₂ t₃ t₄: Term}
+
     namespace HasType
-      theorem deterministic {op: BinOp} {τ₁ τ₂ τ₃ τ₄: Ty}: HasType op τ₁ τ₂ τ₃ → HasType op τ₁ τ₂ τ₄ → τ₃ = τ₄
+      theorem deterministic: HasType op τ₁ τ₂ τ₃ → HasType op τ₁ τ₂ τ₄ → τ₃ = τ₄
         | .and, .and
         | .or,  .or
 
@@ -64,7 +72,7 @@ namespace Total.Stlc.Lang.Surface
     end HasType
 
     namespace Eval₁
-      theorem deterministic {op: BinOp} {t₁ t₂ t₃ t₄: Term}: Eval₁ op t₁ t₂ t₃ → Eval₁ op t₁ t₂ t₄ → t₃ = t₄
+      theorem deterministic: Eval₁ op t₁ t₂ t₃ → Eval₁ op t₁ t₂ t₄ → t₃ = t₄
         | .and, .and
         | .or,  .or
 
@@ -81,7 +89,7 @@ namespace Total.Stlc.Lang.Surface
         | .gt,  .gt
         | .gte, .gte => rfl
 
-      theorem progress {op: BinOp} {τ₁ τ₂ τ₃: Ty} {t₁ t₂: Term} (_: Term.HasType t₁ τ₁) (_: Term.HasType t₂ τ₂): Term.IsValue t₁ → Term.IsValue t₂ → HasType op τ₁ τ₂ τ₃ → ∃ t₃: Term, Eval₁ op t₁ t₂ t₃ ∧ Term.IsValue t₃
+      theorem progress (_: Term.HasType t₁ τ₁) (_: Term.HasType t₂ τ₂): Term.IsValue t₁ → Term.IsValue t₂ → HasType op τ₁ τ₂ τ₃ → ∃ t₃: Term, Eval₁ op t₁ t₂ t₃ ∧ Term.IsValue t₃
         | .bool _, .bool _, .and => ⟨_, .and, .bool _⟩
         | .bool _, .bool _, .or  => ⟨_, .or,  .bool _⟩
 
@@ -98,7 +106,7 @@ namespace Total.Stlc.Lang.Surface
         | .nat _, .nat _, .gt  => ⟨_, .gt,  .bool _⟩
         | .nat _, .nat _, .gte => ⟨_, .gte, .bool _⟩
 
-      theorem preservesTyping {op: BinOp} {τ₁ τ₂ τ₃: Ty} {t₁ t₂ t₃: Term}: HasType op τ₁ τ₂ τ₃ → Eval₁ op t₁ t₂ t₃ → Term.HasType t₃ τ₃
+      theorem preservesTyping: HasType op τ₁ τ₂ τ₃ → Eval₁ op t₁ t₂ t₃ → Term.HasType t₃ τ₃
         | .and, .and
         | .or,  .or  => .bool
 
@@ -115,10 +123,10 @@ namespace Total.Stlc.Lang.Surface
         | .gt,  .gt
         | .gte, .gte => .bool
 
-      theorem preservesHalting {op: BinOp} {t₁ t₂ t₃: Term} (he: Eval₁ op t₁ t₂ t₃): Halts op t₁ t₂ ↔ Term.Halts t₃ :=
+      theorem preservesHalting (he: Eval₁ op t₁ t₂ t₃): Halts op t₁ t₂ ↔ Term.Halts t₃ :=
         ⟨mp he, mpr he⟩
         where
-          mp  {op: BinOp} {t₁ t₂ t₃: Term}: Eval₁ op t₁ t₂ t₃ → Halts op t₁ t₂ → Term.Halts t₃
+          mp: Eval₁ op t₁ t₂ t₃ → Halts op t₁ t₂ → Term.Halts t₃
             | .and,     ⟨_, .and,     .bool _⟩
             | .or,      ⟨_, .or,      .bool _⟩ => ⟨_, .refl, .bool _⟩
             | .add,     ⟨_, .add,     .nat  _⟩
@@ -131,7 +139,7 @@ namespace Total.Stlc.Lang.Surface
             | .lte,     ⟨_, .lte,     .bool _⟩
             | .gt,      ⟨_, .gt,      .bool _⟩
             | .gte,     ⟨_, .gte,     .bool _⟩ => ⟨_, .refl, .bool _⟩
-          mpr {op: BinOp} {t₁ t₂ t₃: Term}: Eval₁ op t₁ t₂ t₃ → Term.Halts t₃ → Halts op t₁ t₂
+          mpr: Eval₁ op t₁ t₂ t₃ → Term.Halts t₃ → Halts op t₁ t₂
             | .and,     ⟨_, _, .bool _⟩ => ⟨_, .and,     .bool  _⟩
             | .or,      ⟨_, _, .bool _⟩ => ⟨_, .or,      .bool  _⟩
             | .add,     ⟨_, _, .nat  _⟩ => ⟨_, .add,     .nat   _⟩
@@ -145,10 +153,10 @@ namespace Total.Stlc.Lang.Surface
             | .gt,      ⟨_, _, .bool _⟩ => ⟨_, .gt,      .bool  _⟩
             | .gte,     ⟨_, _, .bool _⟩ => ⟨_, .gte,     .bool  _⟩
 
-      theorem preservesTotality {τ₁ τ₂ τ₃: Ty} {op: BinOp} {t₁ t₂ t₃: Term} (ht: HasType op τ₁ τ₂ τ₃) (he: Eval₁ op t₁ t₂ t₃): Total τ₁ τ₂ τ₃ op t₁ t₂ ↔ Term.Total τ₃ t₃ :=
+      theorem preservesTotality (ht: HasType op τ₁ τ₂ τ₃) (he: Eval₁ op t₁ t₂ t₃): Total τ₁ τ₂ τ₃ op t₁ t₂ ↔ Term.Total τ₃ t₃ :=
         ⟨mp he, mpr ht he⟩
         where
-          mp  {τ₁ τ₂ τ₃: Ty} {op: BinOp} {t₁ t₂ t₃: Term}: Eval₁ op t₁ t₂ t₃ → Total τ₁ τ₂ τ₃ op t₁ t₂ → Term.Total τ₃ t₃
+          mp: Eval₁ op t₁ t₂ t₃ → Total τ₁ τ₂ τ₃ op t₁ t₂ → Term.Total τ₃ t₃
             | .and,     ⟨.and, _, _⟩
             | .or,      ⟨.or,  _, _⟩ => ⟨.bool, Term.IsValue.halts (.bool _), True.intro⟩
             | .add,     ⟨.add, _, _⟩
@@ -161,7 +169,7 @@ namespace Total.Stlc.Lang.Surface
             | .lte,     ⟨.lte, _, _⟩
             | .gt,      ⟨.gt,  _, _⟩
             | .gte,     ⟨.gte, _, _⟩ => ⟨.bool, Term.IsValue.halts (.bool _), True.intro⟩
-          mpr {τ₁ τ₂ τ₃: Ty} {op: BinOp} {t₁ t₂ t₃: Term}: HasType op τ₁ τ₂ τ₃ → Eval₁ op t₁ t₂ t₃ → Term.Total τ₃ t₃ → Total τ₁ τ₂ τ₃ op t₁ t₂
+          mpr: HasType op τ₁ τ₂ τ₃ → Eval₁ op t₁ t₂ t₃ → Term.Total τ₃ t₃ → Total τ₁ τ₂ τ₃ op t₁ t₂
             | .and, .and,     ⟨.bool, _, _⟩ => ⟨.and, ⟨_, .and,     .bool _⟩, True.intro⟩
             | .or,  .or,      ⟨.bool, _, _⟩ => ⟨.or,  ⟨_, .or,      .bool _⟩, True.intro⟩
             | .add, .add,     ⟨.nat,  _, _⟩ => ⟨.add, ⟨_, .add,     .nat  _⟩, True.intro⟩
@@ -178,6 +186,9 @@ namespace Total.Stlc.Lang.Surface
   end BinOp
 
   namespace Term
+    variable {τ τ₁ τ₂: Ty}
+    variable {t t₁ t₂: Term}
+
     namespace HasType
       theorem deterministic {t: Term} {τ₁ τ₂: Ty}: HasType t τ₁ → HasType t τ₂ → τ₁ = τ₂
         | .bool,          .bool
@@ -250,24 +261,24 @@ namespace Total.Stlc.Lang.Surface
         | .cond _ _ f, .condFalse => f
         | .cond c t f, .cond e    => .cond (preservesTyping c e) t f
 
-      theorem preservesHalting {t₁ t₂: Term} (he: Eval₁ t₁ t₂): Halts t₁ ↔ Halts t₂ :=
+      theorem preservesHalting (he: Eval₁ t₁ t₂): Halts t₁ ↔ Halts t₂ :=
         ⟨mp he, mpr he⟩
         where
-          mp {t₁ t₂: Term}: Eval₁ t₁ t₂ → Halts t₁ → Halts t₂
+          mp: Eval₁ t₁ t₂ → Halts t₁ → Halts t₂
             | h, ⟨_, .trans he₁ he₂, hv⟩ =>
               have h := deterministic h he₁
               -- TODO: Eliminate this tactic block
               by
                 rw [←h] at he₂
                 exact ⟨_, he₂, hv⟩
-          mpr {t₁ t₂: Term}: Eval₁ t₁ t₂ → Halts t₂ → Halts t₁
+          mpr: Eval₁ t₁ t₂ → Halts t₂ → Halts t₁
             | h, ⟨_, .refl, hv⟩          => ⟨_, .trans h .refl, hv⟩
             | h, ⟨_, .trans he₁ he₂, hv⟩ => ⟨_, .trans h (.trans he₁ he₂), hv⟩
 
-      theorem preservesTotality {τ: Ty} {t₁ t₂: Term} (ht: HasType t₁ τ) (he: Eval₁ t₁ t₂): Total τ t₁ ↔ Total τ t₂ :=
+      theorem preservesTotality (ht: HasType t₁ τ) (he: Eval₁ t₁ t₂): Total τ t₁ ↔ Total τ t₂ :=
         ⟨mp he, mpr ht he⟩
         where
-          mp {τ: Ty} {t₁ t₂: Term}: Eval₁ t₁ t₂ → Total τ t₁ → Total τ t₂
+          mp: Eval₁ t₁ t₂ → Total τ t₁ → Total τ t₂
             | he₁, ⟨ht, ⟨_, .trans he₂ he₃, hv⟩, t⟩ =>
               have hd := deterministic he₁ he₂
               have ht := preservesTyping ht he₁
@@ -275,7 +286,7 @@ namespace Total.Stlc.Lang.Surface
               by
                 rw [←hd] at he₃
                 exact ⟨ht, ⟨_, he₃, hv⟩, t⟩
-          mpr {τ: Ty} {t₁ t₂: Term}: HasType t₁ τ → Eval₁ t₁ t₂ → Total τ t₂ → Total τ t₁
+          mpr: HasType t₁ τ → Eval₁ t₁ t₂ → Total τ t₂ → Total τ t₁
             | ht, he₁, ⟨_, ⟨_, .refl,          v⟩, t⟩ => ⟨ht, ⟨_, .trans he₁ .refl,            v⟩, t⟩
             | ht, he₁, ⟨_, ⟨_, .trans he₂ he₃, v⟩, t⟩ => ⟨ht, ⟨_, .trans he₁ (.trans he₂ he₃), v⟩, t⟩
     end Eval₁
@@ -323,7 +334,7 @@ namespace Total.Stlc.Lang.Surface
               Eval₁.preservesTotality h₁ hxy
                 |>.mpr ih₂
 
-      theorem normalization {τ: Ty} {t: Term}: HasType t τ → Halts t -- := sorry
+      theorem normalization {τ: Ty} {t: Term}: HasType t τ → Halts t
         | .bool => Term.IsValue.halts (.bool _)
         | .nat  => Term.IsValue.halts (.nat  _)
         | .unOp op operand  => sorry
@@ -333,6 +344,9 @@ namespace Total.Stlc.Lang.Surface
   end Term
 
   namespace Top
+    variable {τ τ₁ τ₂: Ty}
+    variable {t t₁ t₂: Top}
+
     namespace HasType
       theorem deterministic {t: Top} {τ₁ τ₂: Ty}: HasType t τ₁ → HasType t τ₂ → τ₁ = τ₂ := nomatch t
     end HasType

@@ -8,6 +8,10 @@ set_option autoImplicit false
 
 namespace Total.Stlc.Lang.Surface
   namespace UnOp
+    variable {τ₁ τ₂: Ty}
+    variable {op: UnOp}
+    variable {t: Term}
+
     @[reducible]
     def Halts (op: UnOp) (t₁: Term): Prop := ∃ t₂: Term, Eval₁ op t₁ t₂ ∧ Term.IsValue t₂
 
@@ -16,12 +20,16 @@ namespace Total.Stlc.Lang.Surface
       (HasType op τ₁ τ₂) ∧ (Halts op t) ∧ True
 
     namespace Total
-      theorem halts {τ₁ τ₂: Ty} {op: UnOp} {t: Term}: Total τ₁ τ₂ op t → Halts op t
+      theorem halts: Total τ₁ τ₂ op t → Halts op t
         | ⟨_, hh, _⟩ => hh
     end Total
   end UnOp
 
   namespace BinOp
+    variable {τ₁ τ₂ τ₃: Ty}
+    variable {op: BinOp}
+    variable {t₁ t₂: Term}
+
     @[reducible]
     def Halts (op: BinOp) (t₁ t₂: Term): Prop := ∃ t₃: Term, Eval₁ op t₁ t₂ t₃ ∧ Term.IsValue t₃
 
@@ -30,12 +38,15 @@ namespace Total.Stlc.Lang.Surface
       (HasType op τ₁ τ₂ τ₃) ∧ (Halts op t₁ t₂) ∧ True
 
     namespace Total
-      theorem halts {τ₁ τ₂ τ₃: Ty} {op: BinOp} {t₁ t₂: Term}: Total τ₁ τ₂ τ₃ op t₁ t₂ → Halts op t₁ t₂
+      theorem halts: Total τ₁ τ₂ τ₃ op t₁ t₂ → Halts op t₁ t₂
         | ⟨_, hh, _⟩ => hh
     end Total
   end BinOp
 
   namespace Term
+    variable {τ: Ty}
+    variable {t: Term}
+
     @[reducible]
     def Halts (t₁: Term): Prop := ∃ t₂: Term, Eval t₁ t₂ ∧ IsValue t₂
 
@@ -48,13 +59,13 @@ namespace Total.Stlc.Lang.Surface
       )
 
     namespace IsValue
-      theorem halts {t: Term}: IsValue t → Halts t
+      theorem halts: IsValue t → Halts t
         | .bool _ => ⟨_, .refl, .bool _⟩
         | .nat  _ => ⟨_, .refl, .nat  _⟩
     end IsValue
 
     namespace Total
-      theorem halts {τ: Ty}: {t: Term} → Total τ t → Halts t
+      theorem halts: {t: Term} → Total τ t → Halts t
         | .bool  _,     _                   => IsValue.halts (.bool _)
         | .nat   _,     _                   => IsValue.halts (.nat  _)
 
@@ -66,6 +77,9 @@ namespace Total.Stlc.Lang.Surface
   end Term
 
   namespace Top
+    variable {τ: Ty}
+    variable {t: Top}
+
     @[reducible]
     def Halts (t₁: Top): Prop := ∃ t₂: Top, Eval t₁ t₂ ∧ IsValue t₂
 
@@ -74,11 +88,11 @@ namespace Total.Stlc.Lang.Surface
       | .bool, t => nomatch t
 
     namespace IsValue
-      theorem halts {t: Top}: IsValue t → Halts t := nomatch t
+      theorem halts: IsValue t → Halts t := nomatch t
     end IsValue
 
     namespace Total
-      theorem halts {τ: Ty} {t: Top}: Top → Halts t := nomatch t
+      theorem halts: {t: Top} → Total τ t → Halts t := nomatch t
     end Total
   end Top
 end Total.Stlc.Lang.Surface
