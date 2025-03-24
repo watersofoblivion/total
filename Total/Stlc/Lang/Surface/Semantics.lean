@@ -49,8 +49,6 @@ namespace Total.Stlc.Lang.Surface
     inductive IsValue: Term → Prop where
       | bool (b: Bool): IsValue [Term| ‹bool:b›]
       | nat (n: Nat): IsValue [Term| ‹nat:n›]
-      -- | var (id: String): IsValue (.var id)
-      -- | abs (params: List (String × Ty)) (body: Term): IsValue (.abs params body)
 
     inductive HasType: Term → Ty → Prop where
       | bool {b: Bool}: HasType [Term| ‹bool:b›] [Ty| 𝔹]
@@ -58,13 +56,6 @@ namespace Total.Stlc.Lang.Surface
       | unOp {τ₁ τ₂: Ty} {op: UnOp} {operand: Term} (h₁: UnOp.HasType op τ₁ τ₂) (h₂: HasType operand τ₁): HasType (.unOp op operand) τ₂
       | binOp {τ₁ τ₂ τ₃: Ty} {op: BinOp} {lhs rhs: Term} (h₁: BinOp.HasType op τ₁ τ₂ τ₃) (h₂: HasType lhs τ₁) (h₃: HasType rhs τ₂): HasType (.binOp op lhs rhs) τ₃
       | cond {c t f: Term} {τ: Ty} (h₁: HasType c [Ty| 𝔹]) (h₂: HasType t τ) (h₃: HasType f τ): HasType [Term| if ‹c› then ‹t› else ‹f›] τ
-      -- | var  {τ: Ty}: HasType _ τ
-      -- | bind {expr scope: Term} {τ₁ τ₂: Ty} (h₁: HasType expr τ₁) (h₂: HasType (ε.bind ι τ₁) scope τ₂): HasType (.bind t₁ expr scope) τ₂
-      -- TODO: Turn List.{foldl,map} applications into functions on FormalList
-      -- | abs {formals: FormalList} {body: Term} {τ: Ty} (h: HasType (List.foldl (fun ε (ι, τ) => ε.bind ι τ) ε formals) body τ): HasType (.abs formals body) (.fn (List.map (·.snd) formals) τ)
-      -- TODO: Turn List.{foldl,zip} applications into functions on FormalList
-      -- ERROR: Free Variable Somewhere?!?!
-      -- | app {params: ParamList} {res: Ty} {fn: Term} {args: ArgList} (h₁: HasType fn (.fn params res)) (h₂: List.foldl (fun p (t, τ) => p ∧ HasType t τ) true (List.zip args params)): HasType (.app fn args) res
 
     inductive Eval₁: Term → Term → Prop where
       | unOp {op: UnOp} {operand res: Term} (h₁: IsValue operand) (h₂: UnOp.Eval₁ op operand res): Eval₁ (.unOp op operand) res
@@ -77,14 +68,6 @@ namespace Total.Stlc.Lang.Surface
       | condTrue {t f: Term}: Eval₁ [Term| if tru then ‹t› else ‹f›] [Term| ‹t›]
       | condFalse {t f: Term}: Eval₁ [Term| if fls then ‹t› else ‹f›] [Term| ‹f›]
       | cond {c₁ c₂ t f: Term} (h: Eval₁ c₁ c₂): Eval₁ [Term| if ‹c₁› then ‹t› else ‹f›] [Term| if ‹c₂› then ‹t› else ‹f›]
-
-      -- | bind {ι: String} {τy: Ty} {expr: Term} {scope: Term} (h: IsValue expr): Eval₁ (.bind ι τ expr scope) ([ι ↦  expr] scope)
-      -- | bindExpr {ι: String} {τy: Ty} {e₁ e₂: Term} {scope: Term} (h: Eval₁ e₁ e₂): Eval₁ (.bind ι τ e₁ scope) (.bind ι τ e₂ scope)
-
-      -- TODO: Application
-      -- | app {params: ParamList} {body: Term} {fn: Term} {args: ArgList ρ} (h₁: IsValue fn) (h₂: List.foldl (fun p t => p ∧ IsValue t) true args): Eval₁ (.app (.abs params body) args) (List.foldl (fun body (formal, arg) => [formal ↦ arg] body) body (List.zip (List.map fst formals) args))
-      -- | appArgs {fn: Term} {args: ArgList} (h₁: IsValue fn)
-      -- | appFn {fn₁ fn₂: Term} {args: ArgList ρ} (h: Eval₁ fn₁ fn₂): Eval₁ (.app fn₁ args) (.app fn₂ args)
 
     abbrev Eval := RTC Eval₁
   end Term

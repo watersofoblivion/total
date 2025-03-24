@@ -92,7 +92,7 @@ namespace Total.Stlc.Lang.Surface
     end IsValue
 
     namespace Total
-      theorem halts: {t: Top} → Total τ t → Halts t := nomatch t
+      theorem halts {t: Top}: Total τ t → Halts t := nomatch t
     end Total
   end Top
 end Total.Stlc.Lang.Surface

@@ -28,14 +28,8 @@ namespace Total.Stlc.Lang.Annotated
   inductive Term: Ty → Type where
     | bool (b: Bool): Term .bool
     | nat (n: Nat): Term .nat
-    | primOp {α: Nat} {δ: Domain Ty α} {τ: Ty} (op: PrimOp α δ τ) (operands: Args Ty (Term) α δ): Term (.fn δ τ)
+    | primOp {α: Nat} {δ: Domain Ty α} {τ: Ty} (op: PrimOp α δ τ) (operands: Args Ty α δ): Term (.fn δ τ)
     | cond {τ: Ty} (c: Term .bool) (t f: Term τ): Term τ
-    -- | var {τ: Ty} (id: Ident): Term τ
-    -- | bind {τ σ: Ty} (id: Ident) (expr: Term τ) (scope: Term σ): Term σ
-    -- | abs {α: Nat} {δ: Domain Ty α} {τ: Ty} (formals: Params Ident Ty α δ) (body: Term τ): Term (.fn δ τ)
-    -- | app {α: Nat} {δ: Domain Ty α} {τ: Ty} (fn: Term (.fn δ τ)) (args: Args Ty (Term) α δ): Term τ
 
   inductive Top: Ty → Type where
-    -- | val (ι: Ident) (τ: Ty) (ε: Term τ): Top τ
-    -- | defn {α: Nat} {π: Params Ty α} {τ: Ty} (ι: Ident) (params: Params Ident Ty α π) (body: Term τ): Top τ
 end Total.Stlc.Lang.Annotated

@@ -10,7 +10,7 @@ set_option autoImplicit false
 namespace Total.Stlc.Lang.Annotated
   namespace PrimOp
     @[reducible]
-    def Halts {α: Nat} {δ: Domain Ty α} {π: Params String Ty α δ} {τ: Ty} (op: PrimOp α δ τ) (args: Args Ty π α): Prop := ∃ t₂: Term τ, Eval₁ (.primOp op args) t₂ ∧ Term.IsValue t₂
+    def Halts {α: Nat} {δ: Domain Ty α} {π: Params String Ty α δ} {τ: Ty} (op: PrimOp α δ τ) (args: Args Ty α δ): Prop := ∃ t₂: Term τ, Eval₁ (.primOp op args) t₂ ∧ Term.IsValue t₂
 
     @[reducible]
     def Total {α: Nat} {δ: Domain Ty α} {τ: Ty} (op: PrimOp α δ τ) (t: Args Ty α δ): Prop :=
@@ -48,7 +48,7 @@ namespace Total.Stlc.Lang.Annotated
 
         | .primOp _ _, _ => sorry
 
-        | .cond _ _ _,  ⟨_, ⟨_, he, hv⟩, _⟩ => ⟨_, he, hv⟩
+        | .cond _ _ _,  _ => sorry
     end Total
   end Term
 

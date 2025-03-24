@@ -29,5 +29,5 @@ section Functions
 
   inductive Args (τ: Type): (α: Nat) → Domain τ α → Type where
     | nil {ty: τ} (arg: τ): Args τ 1 (.nil ty)
-    | cons {α: Nat} {δ: Domain τ α} {τy: τ} (arg: ty) (rest: Args τ α δ): Args τ α.succ (.cons ty δ)
+    | cons {α: Nat} {δ: Domain τ α} {ty: τ} (arg: τ) (rest: Args τ α δ): Args τ α.succ (.cons ty δ)
 end Functions
