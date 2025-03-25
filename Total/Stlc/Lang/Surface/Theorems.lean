@@ -8,10 +8,21 @@ import Total.Stlc.Lang.Surface.Termination
 set_option autoImplicit false
 
 namespace Total.Stlc.Lang.Surface
+  /-!
+  # Simply-Typed Lambda Calculus Surface Syntax Properties
+  -/
+
   namespace Ty
+/-!
+# Types
+-/
   end Ty
 
   namespace UnOp
+/-!
+# Unary Operators
+-/
+
     variable {τ τ₁ τ₂: Ty}
     variable {op: UnOp}
     variable {t t₁ t₂: Term}
@@ -43,13 +54,17 @@ namespace Total.Stlc.Lang.Surface
         ⟨mp he, mpr ht he⟩
         where
           mp: Eval₁ op t₁ t₂ → Total τ₁ τ₂ op t₁ → Term.Total τ₂ t₂
-            | .not, ⟨.not, _, _⟩ => ⟨.bool, Term.IsValue.halts (.bool _), True.intro⟩
+            | .not, ⟨.not, _⟩ => ⟨.bool, Term.IsValue.halts (.bool _), .intro⟩
           mpr: HasType op τ₁ τ₂ → Eval₁ op t₁ t₂ → Term.Total τ₂ t₂ → Total τ₁ τ₂ op t₁
-            | .not, .not, ⟨.bool, _, _⟩ => ⟨.not, ⟨_, .not, .bool _⟩ , True.intro⟩
+            | .not, .not, ⟨.bool, _, _⟩ => ⟨.not, ⟨_, .not, .bool _⟩⟩
     end Eval₁
   end UnOp
 
   namespace BinOp
+/-!
+# Binary Operators
+-/
+
     variable {τ τ₁ τ₂ τ₃ τ₄: Ty}
     variable {op: BinOp}
     variable {t t₁ t₂ t₃ t₄: Term}
@@ -157,35 +172,39 @@ namespace Total.Stlc.Lang.Surface
         ⟨mp he, mpr ht he⟩
         where
           mp: Eval₁ op t₁ t₂ t₃ → Total τ₁ τ₂ τ₃ op t₁ t₂ → Term.Total τ₃ t₃
-            | .and,     ⟨.and, _, _⟩
-            | .or,      ⟨.or,  _, _⟩ => ⟨.bool, Term.IsValue.halts (.bool _), True.intro⟩
-            | .add,     ⟨.add, _, _⟩
-            | .mul,     ⟨.mul, _, _⟩ => ⟨.nat,  Term.IsValue.halts (.nat  _), True.intro⟩
-            | .eqBool,  ⟨.eq,  _, _⟩
-            | .eqNat,   ⟨.eq,  _, _⟩
-            | .neqBool, ⟨.neq, _, _⟩
-            | .neqNat,  ⟨.neq, _, _⟩
-            | .lt,      ⟨.lt,  _, _⟩
-            | .lte,     ⟨.lte, _, _⟩
-            | .gt,      ⟨.gt,  _, _⟩
-            | .gte,     ⟨.gte, _, _⟩ => ⟨.bool, Term.IsValue.halts (.bool _), True.intro⟩
+            | .and,     ⟨.and, _⟩
+            | .or,      ⟨.or,  _⟩ => ⟨.bool, Term.IsValue.halts (.bool _), .intro⟩
+            | .add,     ⟨.add, _⟩
+            | .mul,     ⟨.mul, _⟩ => ⟨.nat,  Term.IsValue.halts (.nat  _), .intro⟩
+            | .eqBool,  ⟨.eq,  _⟩
+            | .eqNat,   ⟨.eq,  _⟩
+            | .neqBool, ⟨.neq, _⟩
+            | .neqNat,  ⟨.neq, _⟩
+            | .lt,      ⟨.lt,  _⟩
+            | .lte,     ⟨.lte, _⟩
+            | .gt,      ⟨.gt,  _⟩
+            | .gte,     ⟨.gte, _⟩ => ⟨.bool, Term.IsValue.halts (.bool _), .intro⟩
           mpr: HasType op τ₁ τ₂ τ₃ → Eval₁ op t₁ t₂ t₃ → Term.Total τ₃ t₃ → Total τ₁ τ₂ τ₃ op t₁ t₂
-            | .and, .and,     ⟨.bool, _, _⟩ => ⟨.and, ⟨_, .and,     .bool _⟩, True.intro⟩
-            | .or,  .or,      ⟨.bool, _, _⟩ => ⟨.or,  ⟨_, .or,      .bool _⟩, True.intro⟩
-            | .add, .add,     ⟨.nat,  _, _⟩ => ⟨.add, ⟨_, .add,     .nat  _⟩, True.intro⟩
-            | .mul, .mul,     ⟨.nat,  _, _⟩ => ⟨.mul, ⟨_, .mul,     .nat  _⟩, True.intro⟩
-            | .eq, .eqBool,   ⟨.bool, _, _⟩ => ⟨.eq,  ⟨_, .eqBool,  .bool _⟩, True.intro⟩
-            | .eq, .eqNat,    ⟨.bool, _, _⟩ => ⟨.eq,  ⟨_, .eqNat,   .bool _⟩, True.intro⟩
-            | .neq, .neqBool, ⟨.bool, _, _⟩ => ⟨.neq, ⟨_, .neqBool, .bool _⟩, True.intro⟩
-            | .neq, .neqNat,  ⟨.bool, _, _⟩ => ⟨.neq, ⟨_, .neqNat,  .bool _⟩, True.intro⟩
-            | .lt,  .lt,      ⟨.bool, _, _⟩ => ⟨.lt,  ⟨_, .lt,      .bool _⟩, True.intro⟩
-            | .lte, .lte,     ⟨.bool, _, _⟩ => ⟨.lte, ⟨_, .lte,     .bool _⟩, True.intro⟩
-            | .gt,  .gt,      ⟨.bool, _, _⟩ => ⟨.gt,  ⟨_, .gt,      .bool _⟩, True.intro⟩
-            | .gte, .gte,     ⟨.bool, _, _⟩ => ⟨.gte, ⟨_, .gte,     .bool _⟩, True.intro⟩
+            | .and, .and,     ⟨.bool, _, _⟩ => ⟨.and, ⟨_, .and,     .bool _⟩⟩
+            | .or,  .or,      ⟨.bool, _, _⟩ => ⟨.or,  ⟨_, .or,      .bool _⟩⟩
+            | .add, .add,     ⟨.nat,  _, _⟩ => ⟨.add, ⟨_, .add,     .nat  _⟩⟩
+            | .mul, .mul,     ⟨.nat,  _, _⟩ => ⟨.mul, ⟨_, .mul,     .nat  _⟩⟩
+            | .eq, .eqBool,   ⟨.bool, _, _⟩ => ⟨.eq,  ⟨_, .eqBool,  .bool _⟩⟩
+            | .eq, .eqNat,    ⟨.bool, _, _⟩ => ⟨.eq,  ⟨_, .eqNat,   .bool _⟩⟩
+            | .neq, .neqBool, ⟨.bool, _, _⟩ => ⟨.neq, ⟨_, .neqBool, .bool _⟩⟩
+            | .neq, .neqNat,  ⟨.bool, _, _⟩ => ⟨.neq, ⟨_, .neqNat,  .bool _⟩⟩
+            | .lt,  .lt,      ⟨.bool, _, _⟩ => ⟨.lt,  ⟨_, .lt,      .bool _⟩⟩
+            | .lte, .lte,     ⟨.bool, _, _⟩ => ⟨.lte, ⟨_, .lte,     .bool _⟩⟩
+            | .gt,  .gt,      ⟨.bool, _, _⟩ => ⟨.gt,  ⟨_, .gt,      .bool _⟩⟩
+            | .gte, .gte,     ⟨.bool, _, _⟩ => ⟨.gte, ⟨_, .gte,     .bool _⟩⟩
     end Eval₁
   end BinOp
 
   namespace Term
+/-!
+# Terms
+-/
+
     variable {τ τ₁ τ₂: Ty}
     variable {t t₁ t₂: Term}
 
@@ -344,6 +363,10 @@ namespace Total.Stlc.Lang.Surface
   end Term
 
   namespace Top
+/-!
+# Top-Level Terms
+-/
+
     variable {τ τ₁ τ₂: Ty}
     variable {t t₁ t₂: Top}
 
@@ -379,4 +402,11 @@ namespace Total.Stlc.Lang.Surface
       theorem normalization {τ: Ty} {t: Top}: Halts t := nomatch t
     end Eval
   end Top
+
+  namespace File
+/-!
+# Files
+-/
+
+  end File
 end Total.Stlc.Lang.Surface

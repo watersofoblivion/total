@@ -1,1 +1,4 @@
-/.lake
+.lake
+/docbuild/*
+!/docbuild/lakefile.toml
+!/docbuild/lean-toolchain

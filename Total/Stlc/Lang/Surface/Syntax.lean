@@ -3,6 +3,10 @@ import Total.Stlc.Lang.Surface.Grammar
 set_option autoImplicit false
 
 namespace Total.Stlc.Lang.Surface
+  /-!
+  # Simply-Typed Lambda Calculus Surface Syntax Internal Syntax
+  -/
+
   declare_syntax_cat stlc_surface_ty
   declare_syntax_cat stlc_surface_un_op
   declare_syntax_cat stlc_surface_bin_op
@@ -272,4 +276,11 @@ namespace Total.Stlc.Lang.Surface
     section Implementations
     end Implementations
   end TopLevel
+
+  namespace File
+/-!
+# Files
+-/
+
+  end File
 end Total.Stlc.Lang.Surface
