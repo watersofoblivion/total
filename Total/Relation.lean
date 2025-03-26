@@ -11,6 +11,17 @@ inductive RTC {α: Type} (R: Relation α): Relation α where
   | refl {x: α}: RTC R x x
   | trans {x y z: α}: R x y → RTC R y z → RTC R x z
 
+namespace RTC
+  theorem brecOn {α} {R: Relation α} {motive : {x y: α} → RTC R x y → Prop} {x y: α} (t: RTC R x y) (ip: {x y: α} → (t: RTC R x y) → @RTC.below _ _ @motive _ _ t → motive t): motive t :=
+    RTC.rec (motive := fun _ _ r => RTC.below r ∧ motive r)
+      ⟨RTC.below.refl, ip _ RTC.below.refl⟩
+      (fun hxy hyz ⟨p₁, p₂⟩ =>
+        let b := RTC.below.trans hxy p₁ p₂
+        ⟨b, ip (RTC.trans hxy hyz) b⟩)
+      t
+      |>.right
+end RTC
+
 instance {α: Type} (R: Relation α): Trans R R (RTC R) where
   trans {x y z: α}: R x y → R y z → RTC R x z
     | hxy, hyz => .trans hxy (.trans hyz .refl)

@@ -214,17 +214,13 @@ namespace Total.Stlc.Lang.Surface
         | .nat,           .nat           => rfl
         | .unOp  op₁ operand₁,   .unOp  op₂ operand₂   =>
           have ih₁ := deterministic operand₁ operand₂
-          -- TODO: Eliminate this tactic block
-          by
-            rw [ih₁] at op₁
-            exact UnOp.HasType.deterministic op₁ op₂
+          have op₁ := by rw [ih₁] at op₁; exact op₁
+          UnOp.HasType.deterministic op₁ op₂
         | .binOp op₁ lhs₁ rhs₁, .binOp op₂ lhs₂ rhs₂ =>
           have ih₁ := deterministic lhs₁ lhs₂
           have ih₂ := deterministic rhs₁ rhs₂
-          -- TODO: Eliminate this tactic block
-          by
-            rw [ih₁, ih₂] at op₁
-            exact BinOp.HasType.deterministic op₁ op₂
+          have op₁ := by rw [ih₁, ih₂] at op₁; exact op₁
+          BinOp.HasType.deterministic op₁ op₂
         | .cond _ t₁ _,   .cond _ t₂ _   => by rw [deterministic t₁ t₂]
     end HasType
 
@@ -285,11 +281,9 @@ namespace Total.Stlc.Lang.Surface
         where
           mp: Eval₁ t₁ t₂ → Halts t₁ → Halts t₂
             | h, ⟨_, .trans he₁ he₂, hv⟩ =>
-              have h := deterministic h he₁
-              -- TODO: Eliminate this tactic block
-              by
-                rw [←h] at he₂
-                exact ⟨_, he₂, hv⟩
+              have hd := deterministic h he₁
+              have he := by rw [←hd] at he₂; exact he₂
+              ⟨_, he, hv⟩
           mpr: Eval₁ t₁ t₂ → Halts t₂ → Halts t₁
             | h, ⟨_, .refl, hv⟩          => ⟨_, .trans h .refl, hv⟩
             | h, ⟨_, .trans he₁ he₂, hv⟩ => ⟨_, .trans h (.trans he₁ he₂), hv⟩
@@ -301,10 +295,8 @@ namespace Total.Stlc.Lang.Surface
             | he₁, ⟨ht, ⟨_, .trans he₂ he₃, hv⟩, t⟩ =>
               have hd := deterministic he₁ he₂
               have ht := preservesTyping ht he₁
-              -- TODO: Eliminate this tactic block
-              by
-                rw [←hd] at he₃
-                exact ⟨ht, ⟨_, he₃, hv⟩, t⟩
+              have he := by rw [←hd] at he₃; exact he₃
+              ⟨ht, ⟨_, he, hv⟩, t⟩
           mpr: HasType t₁ τ → Eval₁ t₁ t₂ → Total τ t₂ → Total τ t₁
             | ht, he₁, ⟨_, ⟨_, .refl,          v⟩, t⟩ => ⟨ht, ⟨_, .trans he₁ .refl,            v⟩, t⟩
             | ht, he₁, ⟨_, ⟨_, .trans he₂ he₃, v⟩, t⟩ => ⟨ht, ⟨_, .trans he₁ (.trans he₂ he₃), v⟩, t⟩
@@ -317,10 +309,8 @@ namespace Total.Stlc.Lang.Surface
         | .trans _ _,       .refl            => sorry
         | .trans hxy₁ hyz₁, .trans hxy₂ hyz₂ =>
           have ih := Eval₁.deterministic hxy₁ hxy₂
-          -- TODO: Eliminate this tactic block
-          by
-            rw [ih] at hyz₁
-            exact deterministic hyz₁ hyz₂
+          have h := by rw [ih] at hyz₁; exact hyz₁
+          deterministic h hyz₂
 
       theorem progress {τ: Ty} {t₁: Term} (h: HasType t₁ τ): ∃ t₂: Term, Eval t₁ t₂ ∧ IsValue t₂ :=
         match Eval₁.progress h with
