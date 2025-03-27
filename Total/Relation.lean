@@ -19,12 +19,12 @@ namespace RTC
   /--
   Hand-implement the standard inductive `brecOn` theorem.
   -/
-  theorem brecOn {α} {R: Relation α} {motive : {x y: α} → RTC R x y → Prop} {x y: α} (t: RTC R x y) (ip: {x y: α} → (t: RTC R x y) → @RTC.below _ _ @motive _ _ t → motive t): motive t :=
-    have ⟨_, motive⟩ := RTC.recOn (motive := fun _ _ r => RTC.below r ∧ motive r)
-      t
+  theorem brecOn {α} {R: Relation α} {motive : {x y: α} → RTC R x y → Prop} {x y: α} (on: RTC R x y) (ip: {x y: α} → (on: RTC R x y) → @RTC.below _ _ @motive _ _ on → motive on): motive on :=
+    have ⟨_, motive⟩ := RTC.recOn (motive := fun _ _ rtc => RTC.below rtc ∧ motive rtc)
+      on
       ⟨RTC.below.refl, ip _ RTC.below.refl⟩
-      (fun hxy hyz rel =>
-        let below := RTC.below.trans hxy rel.left rel.right
+      (fun hxy hyz rtc =>
+        let below := RTC.below.trans hxy rtc.left rtc.right
         ⟨below, ip (RTC.trans hxy hyz) below⟩)
     motive
 end RTC
@@ -38,21 +38,21 @@ instance {α: Type} (R: Relation α): Trans R (RTC R) (RTC R) where
     | hxy, hyz => .trans hxy hyz
 
 instance {α: Type} (R: Relation α): Trans (RTC R) R (RTC R) where
-  trans {x y z: α}: RTC R x y → R y z → RTC R x z
-    | x, y => doIt x y
+  trans {x y z: α} (h₁: RTC R x y) (h₂: R y z): RTC R x z :=
+    trans h₁ h₂
     where
-      doIt {x y z: α}: RTC R x y → R y z → RTC R x z
-      | .refl,            hyz => .trans hyz .refl
-      | .trans hxy' hy'y, hyz =>
-        have ih := doIt hy'y hyz
-        .trans hxy' ih
+      trans {x y z: α}: RTC R x y → R y z → RTC R x z
+        | .refl,            hyz => .trans hyz .refl
+        | .trans hxy' hy'y, hyz =>
+          have ih := trans hy'y hyz
+          .trans hxy' ih
 
 instance {α: Type} (R: Relation α): Trans (RTC R) (RTC R) (RTC R) where
-  trans {x y z: α}: RTC R x y → RTC R y z → RTC R x z
-    | x, y => doIt x y
+  trans {x y z: α} (h₁: RTC R x y) (h₂: RTC R y z): RTC R x z :=
+    trans h₁ h₂
     where
-      doIt {x y z: α}: RTC R x y → RTC R y z → RTC R x z
+      trans {x y z: α}: RTC R x y → RTC R y z → RTC R x z
         | .refl,            hyz   => hyz
         | .trans hxy' hy'y, hyz   =>
-          have ih := doIt hy'y hyz
+          have ih := trans hy'y hyz
           .trans hxy' ih

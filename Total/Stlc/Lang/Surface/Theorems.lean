@@ -208,6 +208,12 @@ namespace Total.Stlc.Lang.Surface
     variable {τ τ₁ τ₂: Ty}
     variable {t t₁ t₂: Term}
 
+    namespace IsValue
+      theorem normal {t₁: Term}: IsValue t₁ → ¬ ∃ t₂, Eval₁ t₁ t₂
+        | .bool _, hex
+        | .nat  _, hex => nomatch hex
+    end IsValue
+
     namespace HasType
       theorem deterministic {t: Term} {τ₁ τ₂: Ty}: HasType t τ₁ → HasType t τ₂ → τ₁ = τ₂
         | .bool,          .bool
@@ -225,6 +231,7 @@ namespace Total.Stlc.Lang.Surface
     end HasType
 
     namespace Eval₁
+      set_option maxHeartbeats 500000
       theorem deterministic {t t₁ t₂: Term}: Eval₁ t t₁ → Eval₁ t t₂ → t₁ = t₂
         | .unOp _ e₁, .unOp _ e₂ => by rw [UnOp.Eval₁.deterministic e₁ e₂]
         | .unOpOp e₁, .unOpOp e₂ => by rw [deterministic e₁ e₂]
@@ -237,7 +244,10 @@ namespace Total.Stlc.Lang.Surface
         | .condFalse, .condFalse => rfl
         | .cond e₁,   .cond e₂   => by rw [deterministic e₁ e₂]
 
-        | _, _ => sorry
+        | .unOp v _,       .unOpOp       e
+        | .binOpRight v _, .binOpLeft    e
+        | .binOp v _ _,    .binOpLeft    e
+        | .binOp _ v _,    .binOpRight _ e => nomatch IsValue.normal v ⟨_, e⟩
 
       theorem progress {τ: Ty} {t₁: Term}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Term, Eval₁ t₁ t₂
         | .bool => .inl (.bool _)
@@ -312,13 +322,24 @@ namespace Total.Stlc.Lang.Surface
           have h := by rw [ih] at hyz₁; exact hyz₁
           deterministic h hyz₂
 
-      theorem progress {τ: Ty} {t₁: Term} (ht₁: HasType t₁ τ): ∃ t₂: Term, Eval t₁ t₂ ∧ IsValue t₂ :=
-        match Eval₁.progress ht₁ with
-          | .inl v       => ⟨_, .refl, v⟩
-          | .inr ⟨_, e₁⟩ =>
-            have ht₂ := Eval₁.preservesTyping ht₁ e₁
-            have ⟨_, e₂, v⟩ := progress ht₂
-            ⟨_, .trans e₁ e₂, v⟩
+      theorem progress {τ: Ty} {t₁: Term}: HasType t₁ τ → ∃ t₂: Term, Eval t₁ t₂ ∧ IsValue t₂ -- :=
+        --   have ht₂ := Eval₁.preservesTyping .bool e₁
+        --   have ⟨_, e₂, v⟩ := progress ht₂
+        --   ⟨_, .trans e₁ e₂, v⟩
+        | .bool => ⟨_, .refl, .bool _⟩
+        | .nat  => ⟨_, .refl, .nat  _⟩
+        | .unOp op operand => sorry
+        | .binOp op lhs rhs => sorry
+        | .cond c t f =>
+          match progress c with
+            | ⟨_, .trans e₁ e₂, v⟩ =>
+              have ht := Eval₁.preservesTyping c e₁
+              have ⟨_, e, v⟩ := progress ht
+              sorry
+            | ⟨_, .refl, v⟩ =>
+              match v with
+                | .bool true  => sorry
+                | .bool false => sorry
 
       theorem preservesTyping {τ: Ty} {t₁ t₂: Term} (h: HasType t₁ τ): Eval t₁ t₂ → HasType t₂ τ
         | .refl          => h
