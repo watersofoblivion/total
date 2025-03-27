@@ -312,12 +312,12 @@ namespace Total.Stlc.Lang.Surface
           have h := by rw [ih] at hyz₁; exact hyz₁
           deterministic h hyz₂
 
-      theorem progress {τ: Ty} {t₁: Term} (h: HasType t₁ τ): ∃ t₂: Term, Eval t₁ t₂ ∧ IsValue t₂ :=
-        match Eval₁.progress h with
+      theorem progress {τ: Ty} {t₁: Term} (ht₁: HasType t₁ τ): ∃ t₂: Term, Eval t₁ t₂ ∧ IsValue t₂ :=
+        match Eval₁.progress ht₁ with
           | .inl v       => ⟨_, .refl, v⟩
           | .inr ⟨_, e₁⟩ =>
-            have h := Eval₁.preservesTyping h e₁
-            have ⟨_, e₂, v⟩ := progress h
+            have ht₂ := Eval₁.preservesTyping ht₁ e₁
+            have ⟨_, e₂, v⟩ := progress ht₂
             ⟨_, .trans e₁ e₂, v⟩
 
       theorem preservesTyping {τ: Ty} {t₁ t₂: Term} (h: HasType t₁ τ): Eval t₁ t₂ → HasType t₂ τ

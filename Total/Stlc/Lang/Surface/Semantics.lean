@@ -332,6 +332,32 @@ There are four groups of operators currently supported:
       -/
       | cond {c t f: Term} {τ: Ty} (h₁: HasType c [Ty| 𝔹]) (h₂: HasType t τ) (h₃: HasType f τ): HasType [Term| if ‹c› then ‹t› else ‹f›] τ
 
+    namespace HasType
+      /-!
+      Workaround for https://github.com/leanprover/lean4/issues/1672
+      -/
+
+      /--
+      Hand-implement the standard inductive `brecOn` theorem.
+      -/
+      theorem brecOn {motive: {t: Term} → {τ: Ty} → HasType t τ → Prop} {t: Term} {τ: Ty} (on: HasType t τ) (ip: {t: Term} → {τ: Ty} → (ht: HasType t τ) → @HasType.below @motive _ _ ht → motive ht): motive on :=
+        have ⟨_, motive⟩ := HasType.recOn
+          (motive := fun _ _ ht => HasType.below ht ∧ motive ht)
+          on
+          ⟨HasType.below.bool, ip _ HasType.below.bool⟩
+          ⟨HasType.below.nat,  ip _ HasType.below.nat⟩
+          (fun op _ operand =>
+            have below := HasType.below.unOp op operand.left operand.right
+            ⟨below, ip _ below⟩)
+          (fun op _ _ lhs rhs =>
+            have below := HasType.below.binOp op lhs.left lhs.right rhs.left rhs.right
+            ⟨below, ip _ below⟩)
+          (fun _ _ _ c t f =>
+            have below := HasType.below.cond c.left c.right t.left t.right f.left f.right
+            ⟨below, ip _ below⟩)
+        motive
+    end HasType
+
     /--
     ## Single-Step Evaluation Relation
 
