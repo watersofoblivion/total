@@ -36,11 +36,11 @@ namespace Total.Stlc.Lang.Surface
       theorem deterministic: Eval₁ op t t₁ → Eval₁ op t t₂ → t₁ = t₂
         | .not, .not => rfl
 
-      theorem progress (_: Term.HasType t₁ τ₁): Term.IsValue t₁ → HasType op τ₁ τ₂ → ∃ t₂: Term, Eval₁ op t₁ t₂ ∧ Term.IsValue t₂
-        | .bool _, .not => ⟨_, .not, .bool _⟩
-
       theorem preservesTyping: HasType op τ₁ τ₂ → Eval₁ op t₁ t₂ → Term.HasType t₂ τ₂
         | .not, .not => .bool
+
+      theorem progress (_: Term.HasType t₁ τ₁): Term.IsValue t₁ → HasType op τ₁ τ₂ → ∃ t₂: Term, Eval₁ op t₁ t₂ ∧ Term.IsValue t₂
+        | .bool _, .not => ⟨_, .not, .bool _⟩
 
       theorem preservesHalting (he: Eval₁ op t₁ t₂): Halts op t₁ ↔ Term.Halts t₂ :=
         ⟨mp he, mpr he⟩
@@ -104,23 +104,6 @@ namespace Total.Stlc.Lang.Surface
         | .gt,  .gt
         | .gte, .gte => rfl
 
-      theorem progress (_: Term.HasType t₁ τ₁) (_: Term.HasType t₂ τ₂): Term.IsValue t₁ → Term.IsValue t₂ → HasType op τ₁ τ₂ τ₃ → ∃ t₃: Term, Eval₁ op t₁ t₂ t₃ ∧ Term.IsValue t₃
-        | .bool _, .bool _, .and => ⟨_, .and, .bool _⟩
-        | .bool _, .bool _, .or  => ⟨_, .or,  .bool _⟩
-
-        | .nat _, .nat _, .add => ⟨_, .add, .nat _⟩
-        | .nat _, .nat _, .mul => ⟨_, .mul, .nat _⟩
-
-        | .bool _, .bool _, .eq  => ⟨_, .eqBool,  .bool _⟩
-        | .nat _,  .nat _,  .eq  => ⟨_, .eqNat,   .bool _⟩
-        | .bool _, .bool _, .neq => ⟨_, .neqBool, .bool _⟩
-        | .nat _,  .nat _,  .neq => ⟨_, .neqNat,  .bool _⟩
-
-        | .nat _, .nat _, .lt  => ⟨_, .lt,  .bool _⟩
-        | .nat _, .nat _, .lte => ⟨_, .lte, .bool _⟩
-        | .nat _, .nat _, .gt  => ⟨_, .gt,  .bool _⟩
-        | .nat _, .nat _, .gte => ⟨_, .gte, .bool _⟩
-
       theorem preservesTyping: HasType op τ₁ τ₂ τ₃ → Eval₁ op t₁ t₂ t₃ → Term.HasType t₃ τ₃
         | .and, .and
         | .or,  .or  => .bool
@@ -137,6 +120,23 @@ namespace Total.Stlc.Lang.Surface
         | .lte, .lte
         | .gt,  .gt
         | .gte, .gte => .bool
+
+      theorem progress (_: Term.HasType t₁ τ₁) (_: Term.HasType t₂ τ₂): Term.IsValue t₁ → Term.IsValue t₂ → HasType op τ₁ τ₂ τ₃ → ∃ t₃: Term, Eval₁ op t₁ t₂ t₃ ∧ Term.IsValue t₃
+        | .bool _, .bool _, .and => ⟨_, .and, .bool _⟩
+        | .bool _, .bool _, .or  => ⟨_, .or,  .bool _⟩
+
+        | .nat _, .nat _, .add => ⟨_, .add, .nat _⟩
+        | .nat _, .nat _, .mul => ⟨_, .mul, .nat _⟩
+
+        | .bool _, .bool _, .eq  => ⟨_, .eqBool,  .bool _⟩
+        | .nat _,  .nat _,  .eq  => ⟨_, .eqNat,   .bool _⟩
+        | .bool _, .bool _, .neq => ⟨_, .neqBool, .bool _⟩
+        | .nat _,  .nat _,  .neq => ⟨_, .neqNat,  .bool _⟩
+
+        | .nat _, .nat _, .lt  => ⟨_, .lt,  .bool _⟩
+        | .nat _, .nat _, .lte => ⟨_, .lte, .bool _⟩
+        | .nat _, .nat _, .gt  => ⟨_, .gt,  .bool _⟩
+        | .nat _, .nat _, .gte => ⟨_, .gte, .bool _⟩
 
       theorem preservesHalting (he: Eval₁ op t₁ t₂ t₃): Halts op t₁ t₂ ↔ Term.Halts t₃ :=
         ⟨mp he, mpr he⟩
@@ -209,7 +209,7 @@ namespace Total.Stlc.Lang.Surface
     variable {t t₁ t₂: Term}
 
     namespace IsValue
-      theorem normal {t₁: Term}: IsValue t₁ → ¬ ∃ t₂, Eval₁ t₁ t₂
+      theorem normal {t₁: Term}: IsValue t₁ → ¬ ∃ t₂: Term, Eval₁ t₁ t₂
         | .bool _, hex
         | .nat  _, hex => nomatch hex
     end IsValue
@@ -249,6 +249,18 @@ namespace Total.Stlc.Lang.Surface
         | .binOp v _ _,    .binOpLeft    e
         | .binOp _ v _,    .binOpRight _ e => nomatch IsValue.normal v ⟨_, e⟩
 
+      theorem preservesTyping {τ: Ty} {t₁ t₂: Term}: HasType t₁ τ → Eval₁ t₁ t₂ → HasType t₂ τ
+        | .unOp op _,       .unOp _ e => UnOp.Eval₁.preservesTyping op e
+        | .unOp op operand, .unOpOp e => .unOp op (preservesTyping operand e)
+
+        | .binOp op _ _,     .binOp    _ _ e => BinOp.Eval₁.preservesTyping op e
+        | .binOp op lhs rhs, .binOpRight _ e => .binOp op lhs (preservesTyping rhs e)
+        | .binOp op lhs rhs, .binOpLeft    e => .binOp op (preservesTyping lhs e) rhs
+
+        | .cond _ t _, .condTrue  => t
+        | .cond _ _ f, .condFalse => f
+        | .cond c t f, .cond e    => .cond (preservesTyping c e) t f
+
       theorem progress {τ: Ty} {t₁: Term}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Term, Eval₁ t₁ t₂
         | .bool => .inl (.bool _)
         | .nat  => .inl (.nat  _)
@@ -273,18 +285,6 @@ namespace Total.Stlc.Lang.Surface
             | .inl (.bool true)  => .inr ⟨_, .condTrue⟩
             | .inl (.bool false) => .inr ⟨_, .condFalse⟩
             | .inr ⟨_, e⟩        => .inr ⟨_, .cond e⟩
-
-      theorem preservesTyping {τ: Ty} {t₁ t₂: Term}: HasType t₁ τ → Eval₁ t₁ t₂ → HasType t₂ τ
-        | .unOp op _,       .unOp _ e => UnOp.Eval₁.preservesTyping op e
-        | .unOp op operand, .unOpOp e => .unOp op (preservesTyping operand e)
-
-        | .binOp op _ _,     .binOp    _ _ e => BinOp.Eval₁.preservesTyping op e
-        | .binOp op lhs rhs, .binOpRight _ e => .binOp op lhs (preservesTyping rhs e)
-        | .binOp op lhs rhs, .binOpLeft    e => .binOp op (preservesTyping lhs e) rhs
-
-        | .cond _ t _, .condTrue  => t
-        | .cond _ _ f, .condFalse => f
-        | .cond c t f, .cond e    => .cond (preservesTyping c e) t f
 
       theorem preservesHalting (he: Eval₁ t₁ t₂): Halts t₁ ↔ Halts t₂ :=
         ⟨mp he, mpr he⟩
@@ -313,39 +313,53 @@ namespace Total.Stlc.Lang.Surface
     end Eval₁
 
     namespace Eval
-      theorem deterministic {t t₁ t₂: Term}: Eval t t₁ → Eval t t₂ → t₁ = t₂
-        | .refl,            .refl            => rfl
-        | .refl,            .trans _ _       => sorry
-        | .trans _ _,       .refl            => sorry
-        | .trans hxy₁ hyz₁, .trans hxy₂ hyz₂ =>
-          have ih := Eval₁.deterministic hxy₁ hxy₂
-          have h := by rw [ih] at hyz₁; exact hyz₁
-          deterministic h hyz₂
-
-      theorem progress {τ: Ty} {t₁: Term}: HasType t₁ τ → ∃ t₂: Term, Eval t₁ t₂ ∧ IsValue t₂ -- :=
-        --   have ht₂ := Eval₁.preservesTyping .bool e₁
-        --   have ⟨_, e₂, v⟩ := progress ht₂
-        --   ⟨_, .trans e₁ e₂, v⟩
-        | .bool => ⟨_, .refl, .bool _⟩
-        | .nat  => ⟨_, .refl, .nat  _⟩
-        | .unOp op operand => sorry
-        | .binOp op lhs rhs => sorry
-        | .cond c t f =>
-          match progress c with
-            | ⟨_, .trans e₁ e₂, v⟩ =>
-              have ht := Eval₁.preservesTyping c e₁
-              have ⟨_, e, v⟩ := progress ht
-              sorry
-            | ⟨_, .refl, v⟩ =>
-              match v with
-                | .bool true  => sorry
-                | .bool false => sorry
-
       theorem preservesTyping {τ: Ty} {t₁ t₂: Term} (h: HasType t₁ τ): Eval t₁ t₂ → HasType t₂ τ
         | .refl          => h
         | .trans hxy hyz =>
           have ih := Eval₁.preservesTyping h hxy
           preservesTyping ih hyz
+
+      theorem progress {τ: Ty} {t₁: Term}: HasType t₁ τ → ∃ t₂: Term, Eval t₁ t₂ ∧ IsValue t₂
+        | .bool => ⟨_, .refl, .bool _⟩
+        | .nat  => ⟨_, .refl, .nat  _⟩
+        | .unOp op operand =>
+          have ⟨_, e₁, v₁⟩ := progress operand
+          have ht := Eval.preservesTyping operand e₁
+          have ⟨_, e₂, v₂⟩ := UnOp.Eval₁.progress ht v₁ op
+          ⟨_, unOp v₁ e₂ e₁, v₂⟩
+        | .binOp op lhs rhs =>
+          have ⟨_, el, vl⟩ := progress lhs
+          have ⟨_, er, vr⟩ := progress rhs
+          have tl := preservesTyping lhs el
+          have tr := preservesTyping rhs er
+          have ⟨_, eop, vop⟩ := BinOp.Eval₁.progress tl tr vl vr op
+          have e := binOpLeft vl vr eop er el
+          ⟨_, e, vop⟩
+        | .cond c t f =>
+          have ⟨_, ec, vc⟩ := progress c
+          have ⟨_, et, vt⟩ := progress t
+          have ⟨_, ef, vf⟩ := progress f
+          have ht := preservesTyping c ec
+          cond ht et vt ef vf vc ec
+        where
+          unOp {op: UnOp} {operand₁ operand₂ res: Term} (hv: IsValue operand₂) (hoe: UnOp.Eval₁ op operand₂ res): Eval operand₁ operand₂ → Eval (.unOp op operand₁) res
+            | .trans e₁ e₂ => .trans (.unOpOp e₁)   (unOp hv hoe e₂)
+            | .refl        => .trans (.unOp hv hoe) .refl
+          binOpRight {op: BinOp} {lhs rhs₁ rhs₂ res: Term} (hvl: IsValue lhs) (hvr: IsValue rhs₂) (hoe: BinOp.Eval₁ op lhs rhs₂ res): Eval rhs₁ rhs₂ → Eval (.binOp op lhs rhs₁) res
+            | .trans e₁ e₂ => .trans (.binOpRight hvl e₁) (binOpRight hvl hvr hoe e₂)
+            | .refl        => .trans (.binOp hvl hvr hoe) .refl
+          binOpLeft {op: BinOp} {lhs₁ lhs₂ rhs₁ rhs₂ res: Term} (hvl: IsValue lhs₂) (hvr: IsValue rhs₂) (hoe: BinOp.Eval₁ op lhs₂ rhs₂ res) (hr: Eval rhs₁ rhs₂): Eval lhs₁ lhs₂ → Eval (.binOp op lhs₁ rhs₁) res
+            | .trans e₁ e₂ => .trans (.binOpLeft e₁) (binOpLeft hvl hvr hoe hr e₂)
+            | .refl        => binOpRight hvl hvr hoe hr
+          cond {c₁ c₂ t₁ t₂ f₁ f₂: Term} (hct: HasType c₂ .bool) (hte: Eval t₁ t₂) (htv: IsValue t₂) (hfe: Eval f₁ f₂) (hfv: IsValue f₂) (hcv: IsValue c₂): Eval c₁ c₂ → ∃ res: Term, Eval (.cond c₁ t₁ f₁) res ∧ IsValue res
+            | .trans e₁ e₂ =>
+              have ⟨_, e, v⟩ := cond hct hte htv hfe hfv hcv e₂
+              ⟨_, .trans (.cond e₁) e, v⟩
+            | .refl =>
+              match hcv with
+                | .bool true  => ⟨_, .trans .condTrue  hte, htv⟩
+                | .bool false => ⟨_, .trans .condFalse hfe, hfv⟩
+                | .nat _      => nomatch hct
 
       theorem preservesTotality {τ: Ty} {t₁ t₂: Term} (ht: HasType t₁ τ) (he: Eval t₁ t₂): Total τ t₁ ↔ Total τ t₂ :=
         ⟨mp he, mpr ht he⟩
@@ -387,8 +401,8 @@ namespace Total.Stlc.Lang.Surface
 
     namespace Eval₁
       theorem deterministic {t t₁ t₂: Top}: Eval₁ t t₁ → Eval₁ t t₂ → t₁ = t₂ := nomatch t
-      theorem progress {τ: Ty} {t₁: Top}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Top, Eval₁ t₁ t₂ := nomatch t₁
       theorem preservesTyping {τ: Ty} {t₁ t₂: Top}: HasType t₁ τ → Eval₁ t₁ t₂ → HasType t₂ τ := nomatch t₁
+      theorem progress {τ: Ty} {t₁: Top}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Top, Eval₁ t₁ t₂ := nomatch t₁
       theorem preservesHalting {t₁ t₂: Top} (he: Eval₁ t₁ t₂): Halts t₁ ↔ Halts t₂ :=
         ⟨mp he, mpr he⟩
         where
@@ -402,9 +416,8 @@ namespace Total.Stlc.Lang.Surface
     end Eval₁
 
     namespace Eval
-      theorem deterministic {t t₁ t₂: Top}: Eval t t₁ → Eval t t₂ → t₁ = t₂ := nomatch t
-      theorem progress {τ: Ty} {t₁: Top}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Top, Eval t₁ t₂ := nomatch t₁
       theorem preservesTyping {τ: Ty} {t₁ t₂: Top}: HasType t₁ τ → Eval t₁ t₂ → HasType t₂ τ := nomatch t₁
+      theorem progress {τ: Ty} {t₁: Top}: HasType t₁ τ → IsValue t₁ ∨ ∃ t₂: Top, Eval t₁ t₂ := nomatch t₁
       theorem preservesTotality {τ: Ty} {t₁ t₂: Top} (ht: HasType t₁ τ) (he: Eval t₁ t₂): Total τ t₁ ↔ Total τ t₂ :=
         ⟨mp he, mpr ht he⟩
         where
