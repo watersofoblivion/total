@@ -23,11 +23,15 @@ section Functions
     | nil (ty: τ): Domain τ 1
     | cons {α: Nat} (ty: τ) (rest: Domain τ α): Domain τ α.succ
 
-  inductive Params (ι: Type) (τ: Type): (α: Nat) → Domain τ α → Type where
-    | nil (id: ι) (ty: τ): Params ι τ 1 (.nil ty)
-    | cons {α: Nat} {δ: Domain τ α} (id: ι) (ty: τ) (rest: Params ι τ α δ): Params ι τ α.succ (.cons ty δ)
+  inductive Params {τ: Type}: {α: Nat} → Domain τ α → Type where
+    | nil (id: Nat) (ty: τ): Params (.nil ty)
+    | cons {α: Nat} {δ: Domain τ α} (id: ι) (ty: τ) (rest: Params δ): Params (.cons ty δ)
 
-  inductive Args (τ: Type): (α: Nat) → Domain τ α → Type where
-    | nil {ty: τ} (arg: τ): Args τ 1 (.nil ty)
-    | cons {α: Nat} {δ: Domain τ α} {ty: τ} (arg: τ) (rest: Args τ α δ): Args τ α.succ (.cons ty δ)
+  inductive Args {τ: Type} (t: τ → Type): {α: Nat} → Domain τ α → Type where
+    | nil {ty: τ} (arg: t ty): Args t (.nil ty)
+    | cons {α: Nat} {δ: Domain τ α} {ty: τ} (arg: t ty) (rest: Args t δ): Args t (.cons ty δ)
+
+  inductive Values {τ: Type} (t: τ → Type) (υ: {ty: τ} → t ty → Prop): {α: Nat} -> Domain τ α → Type where
+    | nil {ty: τ} {term: t ty} (v: υ term): Values t υ (.nil ty)
+    | cons {α: Nat} {δ: Domain τ α} {ty: τ} {term: t ty} (v: υ term) /- (rest: Values t υ δ) -/: Values t υ (.cons ty δ)
 end Functions

@@ -10,24 +10,24 @@ set_option autoImplicit false
 namespace Total.Stlc.Lang.Annotated
   namespace PrimOp
     @[reducible]
-    def Halts {α: Nat} {δ: Domain Ty α} {π: Params String Ty α δ} {τ: Ty} (op: PrimOp α δ τ) (args: Args Ty α δ): Prop := ∃ t₂: Term τ, Eval₁ (.primOp op args) t₂ ∧ Term.IsValue t₂
+    def Halts {α: Nat} {δ: Domain Ty α} {τ: Ty} (op: PrimOp δ τ) (args: Args δ): Prop := ∃ t₂: Term τ, Eval₁ op args t₂ ∧ Term.IsValue t₂
 
     @[reducible]
-    def Total {α: Nat} {δ: Domain Ty α} {τ: Ty} (op: PrimOp α δ τ) (t: Args Ty α δ): Prop :=
-      (Halts op t) ∧ True
+    def Total {α: Nat} {δ: Domain Ty α} {τ: Ty} (op: PrimOp δ τ) (args: Args δ): Prop :=
+      (Halts op args) ∧ True
 
     namespace Total
-      theorem halts {α: Nat} {δ: Domain Ty α} {τ: Ty} {op: PrimOp α δ τ} {t: Term τ}: Total op t → Halts op t
+      theorem halts {α: Nat} {δ: Domain Ty α} {τ: Ty} {op: PrimOp δ τ} {args: Args δ}: Total op args → Halts op args
         | ⟨hh, _⟩ => hh
     end Total
   end PrimOp
 
   namespace Term
     @[reducible]
-    def Halts {τ: Ty} (t₁: Term τ): Prop := ∃ t₂: Term τ, Eval τ t₁ t₂ ∧ IsValue τ t₂
+    def Halts {τ: Ty} (t₁: Term τ): Prop := ∃ t₂: Term τ, Eval t₁ t₂ ∧ IsValue t₂
 
     @[reducible]
-    def Total (τ: Ty) (t: Term τ): Prop :=
+    def Total {τ: Ty} (t: Term τ): Prop :=
       (Halts t) ∧ (
         match τ with
           | .bool => True
@@ -36,13 +36,13 @@ namespace Total.Stlc.Lang.Annotated
       )
 
     namespace IsValue
-      theorem halts {τ: Ty} {t: Term τ}: IsValue τ t → Halts t
+      theorem halts {τ: Ty} {t: Term τ}: IsValue t → Halts t
         | .bool _ => ⟨_, .refl, .bool _⟩
         | .nat  _ => ⟨_, .refl, .nat  _⟩
     end IsValue
 
     namespace Total
-      theorem halts {τ: Ty}: {t: Term τ} → Total τ t → Halts t
+      theorem halts {τ: Ty}: {t: Term τ} → Total t → Halts t
         | .bool _, _ => IsValue.halts (.bool _)
         | .nat _,  _ => IsValue.halts (.nat  _)
 
@@ -54,14 +54,14 @@ namespace Total.Stlc.Lang.Annotated
 
   namespace Top
     @[reducible]
-    def Halts {τ: Ty} (t₁: Top τ): Prop := ∃ t₂: Top τ, Eval τ t₁ t₂ ∧ IsValue τ t₂
+    def Halts {τ: Ty} (t₁: Top τ): Prop := ∃ t₂: Top τ, Eval t₁ t₂ ∧ IsValue t₂
 
     @[reducible]
     def Total {τ: Ty}: Ty → Top τ → Prop
-      | .bool, t => nomatch t
+      | _, t => nomatch t
 
     namespace IsValue
-      theorem halts {τ: Ty} {t: Top τ}: IsValue τ t → Halts t := nomatch t
+      theorem halts {τ: Ty} {t: Top τ}: IsValue t → Halts t := nomatch t
     end IsValue
 
     namespace Total

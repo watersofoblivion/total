@@ -8,28 +8,32 @@ namespace Total.Stlc.Lang.Annotated
     | nat: Ty
     | fn {α: Nat} (dom: Domain Ty α) (rng: Ty): Ty
 
-  inductive PrimOp: (α: Nat) → Domain Ty α → Ty → Type where
-    | and: PrimOp 2 (.cons .bool (.nil .bool)) .bool
-    | or:  PrimOp 2 (.cons .bool (.nil .bool)) .bool
-    | not: PrimOp 1 (.nil .bool) .bool
+  abbrev Domain (α: Nat) := _root_.Domain Ty α
 
-    | add: PrimOp 2 (.cons .nat (.nil .nat)) .nat
-    | sub: PrimOp 2 (.cons .nat (.nil .nat)) .nat
-    | mul: PrimOp 2 (.cons .nat (.nil .nat)) .nat
+  inductive PrimOp: {α: Nat} → Domain α → Ty → Type where
+    | and: PrimOp (.cons .bool (.nil .bool)) .bool
+    | or:  PrimOp (.cons .bool (.nil .bool)) .bool
+    | not: PrimOp (.nil .bool) .bool
 
-    | eq  {τ: Ty}: PrimOp 2 (.cons τ (.nil τ)) .bool
-    | neq {τ: Ty}: PrimOp 2 (.cons τ (.nil τ)) .bool
+    | add: PrimOp (.cons .nat (.nil .nat)) .nat
+    | sub: PrimOp (.cons .nat (.nil .nat)) .nat
+    | mul: PrimOp (.cons .nat (.nil .nat)) .nat
 
-    | lt:  PrimOp 2 (.cons .nat (.nil .nat)) .bool
-    | lte: PrimOp 2 (.cons .nat (.nil .nat)) .bool
-    | gt:  PrimOp 2 (.cons .nat (.nil .nat)) .bool
-    | gte: PrimOp 2 (.cons .nat (.nil .nat)) .bool
+    | eq  {τ: Ty}: PrimOp (.cons τ (.nil τ)) .bool
+    | neq {τ: Ty}: PrimOp (.cons τ (.nil τ)) .bool
+
+    | lt:  PrimOp (.cons .nat (.nil .nat)) .bool
+    | lte: PrimOp (.cons .nat (.nil .nat)) .bool
+    | gt:  PrimOp (.cons .nat (.nil .nat)) .bool
+    | gte: PrimOp (.cons .nat (.nil .nat)) .bool
 
   inductive Term: Ty → Type where
     | bool (b: Bool): Term .bool
     | nat (n: Nat): Term .nat
-    | primOp {α: Nat} {δ: Domain Ty α} {τ: Ty} (op: PrimOp α δ τ) (operands: Args Ty α δ): Term (.fn δ τ)
+    | primOp {α: Nat} {δ: Domain α} {τ: Ty} (op: PrimOp δ τ) (operands: Args Term δ): Term (.fn δ τ)
     | cond {τ: Ty} (c: Term .bool) (t f: Term τ): Term τ
+
+  abbrev Args {α: Nat} (δ: Domain α) := _root_.Args Term δ
 
   inductive Top: Ty → Type where
 end Total.Stlc.Lang.Annotated
