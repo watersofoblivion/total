@@ -9,6 +9,22 @@ set_option autoImplicit false
 namespace Total.Stlc.Lang.Annotated
   namespace PrimOp
     inductive Eval₁: {α: Nat} → {δ: Domain α} → {τ: Ty} → PrimOp δ τ → Args δ → Term τ → Prop where
+      | and {lhs rhs: Bool} {vs: Values (.cons .bool (.nil .bool))}: Eval₁ .and (.values (.cons (.bool lhs) (.nil (.bool rhs)))) (.value (.bool (lhs && rhs)))
+      | or  {lhs rhs: Bool} {vs: Values (.cons .bool (.nil .bool))}: Eval₁ .or  (.values (.cons (.bool lhs) (.nil (.bool rhs)))) (.value (.bool (lhs || rhs)))
+      | not {operand: Bool} {vs: Values (.nil .bool)}: Eval₁ .not (.values (.nil (.bool operand))) (.value (.bool (!operand)))
+
+      | add {lhs rhs: Nat} {vs: Values (.cons .nat (.nil .nat))}: Eval₁ .add (.values (.cons (.nat lhs) (.nil (.nat rhs)))) (.value (.nat (lhs + rhs)))
+      | mul {lhs rhs: Nat} {vs: Values (.cons .nat (.nil .nat))}: Eval₁ .mul (.values (.cons (.nat lhs) (.nil (.nat rhs)))) (.value (.nat (lhs * rhs)))
+
+      | eqBool  {lhs rhs: Bool} {vs: Values (.cons .bool (.nil .bool))}: Eval₁ .eq  (.values (.cons (.bool lhs) (.nil (.bool rhs)))) (.value (.bool (lhs == rhs)))
+      | eqNat   {lhs rhs: Nat}  {vs: Values (.cons .nat  (.nil .nat))}:  Eval₁ .eq  (.values (.cons (.nat  lhs) (.nil (.nat  rhs)))) (.value (.bool (lhs == rhs)))
+      | neqBool {lhs rhs: Bool} {vs: Values (.cons .bool (.nil .bool))}: Eval₁ .neq (.values (.cons (.bool lhs) (.nil (.bool rhs)))) (.value (.bool (lhs != rhs)))
+      | neqNat  {lhs rhs: Nat}  {vs: Values (.cons .nat  (.nil .nat))}:  Eval₁ .neq (.values (.cons (.nat  lhs) (.nil (.nat  rhs)))) (.value (.bool (lhs != rhs)))
+
+      | lt  {lhs rhs: Nat} {vs: Values (.cons .nat (.nil .nat))}: Eval₁ .lt  (.values (.cons (.nat lhs) (.nil (.nat rhs)))) (.value (.bool (lhs < rhs)))
+      | lte {lhs rhs: Nat} {vs: Values (.cons .nat (.nil .nat))}: Eval₁ .lte (.values (.cons (.nat lhs) (.nil (.nat rhs)))) (.value (.bool (lhs ≤ rhs)))
+      | gt  {lhs rhs: Nat} {vs: Values (.cons .nat (.nil .nat))}: Eval₁ .gt  (.values (.cons (.nat lhs) (.nil (.nat rhs)))) (.value (.bool (lhs < rhs)))
+      | gte {lhs rhs: Nat} {vs: Values (.cons .nat (.nil .nat))}: Eval₁ .gte (.values (.cons (.nat lhs) (.nil (.nat rhs)))) (.value (.bool (lhs ≤ rhs)))
   end PrimOp
 
   namespace Value
@@ -17,11 +33,24 @@ namespace Total.Stlc.Lang.Annotated
       | nat  (n: Nat):  IsValue (.nat n)
   end Value
 
+  mutual
+    inductive Term.Eval₁: {τ: Ty} → Term τ → Term τ → Prop where
+      | primOpOps {α: Nat} {δ: Domain α} {τ ρ: Ty} {op: PrimOp δ ρ} {args₁ args₂: Args δ} (h: Args.Eval₁ args₁ args₂): Term.Eval₁ (.primOp op args₁) (.primOp op args₂)
+      | primOp {α: Nat} {δ: Domain α} {ρ: Ty} {op: PrimOp δ ρ} {vs: Values δ} {res: Term ρ} (h: PrimOp.Eval₁ op (.values vs) res): Term.Eval₁ (.primOp op (.values vs)) res
+      | condTrue {τ: Ty} {t f: Term τ}: Term.Eval₁ (.cond (.value (.bool true)) t f) t
+      | condFalse {τ: Ty} {t f: Term τ}: Term.Eval₁ (.cond (.value (.bool false)) t f) f
+      | cond {τ: Ty} {c₁ c₂: Term .bool} {t f: Term τ} (h: Term.Eval₁ c₁ c₂): Term.Eval₁ (.cond c₁ t f) (.cond c₂ t f)
+
+    inductive Args.Eval₁: {α: Nat} → {δ: Domain α} → Args δ → Args δ → Prop where
+      | nil {α: Nat} {δ: Domain α} {τ: Ty} {vs: Values δ} {t₁ t₂: Term τ} (h: Term.Eval₁ t₁ t₂): Args.Eval₁ (.mix vs (.nil t₁)) (.mix vs (.nil t₂))
+      | nilValue {α: Nat} {δ: Domain α} {τ: Ty} {vs: Values δ} {v: Value τ}: Args.Eval₁ (.mix vs (.nil (.value v))) (.values (vs ++ v))
+      | cons {α β: Nat} {δ₁: Domain α} {δ₂: Domain β} {τ: Ty} {vs: Values δ₁} {t₁ t₂: Term τ} {ts: Terms δ₂} (h: Term.Eval₁ t₁ t₂): Args.Eval₁ (.mix vs (.cons t₁ ts)) (.mix vs (.cons t₂ ts))
+      | consValue {α β: Nat} {δ₁: Domain α} {δ₂: Domain β} {τ: Ty} {vs: Values δ₁} {v: Value τ} {ts: Terms δ₂}: Args.Eval₁ (.mix vs (.cons (.value v) ts)) (.mix (vs ++ v) ts)
+  end
+
   namespace Term
     inductive IsValue: {τ: Ty} → Term τ → Prop where
       | value {τ: Ty} (v: Value τ): IsValue (.value v)
-
-    inductive Eval₁: {τ: Ty} → Term τ → Term τ → Prop where
 
     abbrev Eval {τ: Ty}: Term τ → Term τ → Prop := RTC Eval₁
   end Term

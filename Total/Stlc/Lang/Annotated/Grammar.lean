@@ -7,7 +7,7 @@ namespace Total.Stlc.Lang.Annotated
     inductive Ty: Type where
       | bool: Ty
       | nat: Ty
-      | fn {α: Nat} (dom: Domain α) (rng: Ty): Ty
+      | fn {α: Nat} (δ: Domain α) (ρ: Ty): Ty
 
     inductive Domain: Nat → Type where
       | nil (τ: Ty): Domain 1
@@ -19,16 +19,18 @@ namespace Total.Stlc.Lang.Annotated
       append lhs rhs
       where
         append {α β: Nat}: Domain α → Domain β → Domain (β + α)
-          | .nil τ, δ => .cons τ δ
+          | .nil τ,       δ => .cons τ δ
           | .cons τ rest, δ => .cons τ (append rest δ)
+
+  instance: {α: Nat} → HAppend Ty (Domain α) (Domain (α + 1)) where
+    hAppend lhs rhs := .cons lhs rhs
 
   inductive PrimOp: {α: Nat} → Domain α → Ty → Type where
     | and: PrimOp (.cons .bool (.nil .bool)) .bool
     | or:  PrimOp (.cons .bool (.nil .bool)) .bool
-    | not: PrimOp (.nil .nat)        .bool
+    | not: PrimOp (.nil  .bool)              .bool
 
     | add: PrimOp (.cons .nat (.nil .nat)) .nat
-    | sub: PrimOp (.cons .nat (.nil .nat)) .nat
     | mul: PrimOp (.cons .nat (.nil .nat)) .nat
 
     | eq  {τ: Ty}: PrimOp (.cons τ (.nil τ)) .bool
@@ -50,7 +52,7 @@ namespace Total.Stlc.Lang.Annotated
 
     inductive Term: Ty → Type where
       | value {τ: Ty} (v: Value τ): Term τ
-      | primOp {α: Nat} {δ: Domain α} {τ: Ty}  (op: PrimOp δ τ) (operands: Args δ): Term (.fn δ τ)
+      | primOp {α: Nat} {δ: Domain α} {ρ: Ty} (op: PrimOp δ ρ) (operands: Args δ): Term ρ
       | cond {τ: Ty} (c: Term .bool) (t f: Term τ): Term τ
 
     inductive Terms: {α: Nat} → Domain α → Type where
@@ -62,6 +64,25 @@ namespace Total.Stlc.Lang.Annotated
       | mix {α β: Nat} {δ₁: Domain α} {δ₂: Domain β} (vs: Values δ₁) (ts: Terms δ₂): Args (δ₁ ++ δ₂)
       | values {α: Nat} {δ: Domain α} (vs: Values δ): Args δ
   end
+
+  instance: {α: Nat} → HAppend (Domain α) Ty (Domain (α + 1)) where
+    hAppend lhs rhs :=
+      append lhs rhs
+      where
+        append {α: Nat}: Domain α → Ty → Domain (α + 1)
+          | .nil τ₁,      τ => .cons τ₁ (.nil τ)
+          | .cons τ rest, δ => .cons τ (append rest δ)
+
+  instance: {α: Nat} → {δ: Domain α} → {τ: Ty} → HAppend (Values δ) (Value τ) (Values (δ ++ τ)) where
+    hAppend lhs rhs :=
+      append lhs rhs
+      where
+        append {α: Nat} {δ: Domain α} {τ: Ty}: Values δ → Value τ → Values (δ ++ τ)
+          | .nil t₁,      t₂ => .cons t₁ (.nil t₂)
+          | .cons τ rest, vs => .cons τ (append rest vs)
+
+  instance: {α: Nat} → {δ: Domain α} → {τ: Ty} → HAppend (Term τ) (Terms δ) (Terms (τ ++ δ)) where
+    hAppend lhs rhs := .cons lhs rhs
 
   inductive Top: Ty → Type where
 end Total.Stlc.Lang.Annotated
