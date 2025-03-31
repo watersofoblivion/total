@@ -10,14 +10,14 @@ set_option autoImplicit false
 namespace Total.Stlc.Lang.Annotated
   namespace PrimOp
     @[reducible]
-    def Halts {α: Nat} {δ: Domain Ty α} {τ: Ty} (op: PrimOp δ τ) (args: Args δ): Prop := ∃ t₂: Term τ, Eval₁ op args t₂ ∧ Term.IsValue t₂
+    def Halts {α: Nat} {δ: Domain α} {τ: Ty} (op: PrimOp δ τ) (args: Args δ): Prop := ∃ t₂: Term τ, Eval₁ op args t₂ ∧ Term.IsValue t₂
 
     @[reducible]
-    def Total {α: Nat} {δ: Domain Ty α} {τ: Ty} (op: PrimOp δ τ) (args: Args δ): Prop :=
+    def Total {α: Nat} {δ: Domain α} {τ: Ty} (op: PrimOp δ τ) (args: Args δ): Prop :=
       (Halts op args) ∧ True
 
     namespace Total
-      theorem halts {α: Nat} {δ: Domain Ty α} {τ: Ty} {op: PrimOp δ τ} {args: Args δ}: Total op args → Halts op args
+      theorem halts {α: Nat} {δ: Domain α} {τ: Ty} {op: PrimOp δ τ} {args: Args δ}: Total op args → Halts op args
         | ⟨hh, _⟩ => hh
     end Total
   end PrimOp
@@ -36,19 +36,19 @@ namespace Total.Stlc.Lang.Annotated
       )
 
     namespace IsValue
-      theorem halts {τ: Ty} {t: Term τ}: IsValue t → Halts t
-        | .bool _ => ⟨_, .refl, .bool _⟩
-        | .nat  _ => ⟨_, .refl, .nat  _⟩
+      theorem halts {τ: Ty} {t: Term τ}: IsValue t → Halts t := sorry
+        -- | .bool _ => ⟨_, .refl, .bool _⟩
+        -- | .nat  _ => ⟨_, .refl, .nat  _⟩
     end IsValue
 
     namespace Total
-      theorem halts {τ: Ty}: {t: Term τ} → Total t → Halts t
-        | .bool _, _ => IsValue.halts (.bool _)
-        | .nat _,  _ => IsValue.halts (.nat  _)
+      theorem halts {τ: Ty}: {t: Term τ} → Total t → Halts t := sorry
+        -- | .bool _, _ => IsValue.halts (.bool _)
+        -- | .nat _,  _ => IsValue.halts (.nat  _)
 
-        | .primOp _ _, _ => sorry
+        -- | .primOp _ _, _ => sorry
 
-        | .cond _ _ _,  _ => sorry
+        -- | .cond _ _ _,  _ => sorry
     end Total
   end Term
 

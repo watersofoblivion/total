@@ -11,22 +11,19 @@ namespace Total.Stlc.Lang.Annotated
     inductive Eval₁: {α: Nat} → {δ: Domain α} → {τ: Ty} → PrimOp δ τ → Args δ → Term τ → Prop where
   end PrimOp
 
-  namespace Term
-    inductive IsValue: {τ: Ty} → Term τ → Prop where
+  namespace Value
+    inductive IsValue: {τ: Ty} → Value τ → Prop where
       | bool (b: Bool): IsValue (.bool b)
       | nat  (n: Nat):  IsValue (.nat n)
+  end Value
 
-    abbrev Values {α: Nat} (δ: Domain α) := _root_.Values Term IsValue δ
+  namespace Term
+    inductive IsValue: {τ: Ty} → Term τ → Prop where
+      | value {τ: Ty} (v: Value τ): IsValue (.value v)
 
     inductive Eval₁: {τ: Ty} → Term τ → Term τ → Prop where
 
     abbrev Eval {τ: Ty}: Term τ → Term τ → Prop := RTC Eval₁
-
-    #check (.nil (.bool true) : Args (.nil .bool))
-    #check (.cons (.nat 2) (.cons (.nat 2) (.nil (.bool true))) : Args (.cons .nat (.cons .nat (.nil .bool))))
-
-    #check (.nil (.bool true): Values (.nil .bool))
-    #check (.cons (.nat 2) /- (.cons (.nat 2) (.nil (.bool true))) -/ : Values (.cons .nat (.cons .nat (.nil .bool))))
   end Term
 
   namespace Top
