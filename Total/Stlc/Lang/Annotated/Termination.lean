@@ -10,14 +10,14 @@ set_option autoImplicit false
 namespace Total.Stlc.Lang.Annotated
   namespace PrimOp
     @[reducible]
-    def Halts {α: Nat} {δ: Domain α} {τ: Ty} (op: PrimOp δ τ) (args: Args δ): Prop := ∃ t₂: Term τ, Eval₁ op args t₂ ∧ Term.IsValue t₂
+    def Halts {α: Nat} {δ: Domain α} {τ: Ty} (op: PrimOp δ τ) (args: Values δ): Prop := ∃ t₂: Term τ, Eval₁ op args t₂ ∧ Term.IsValue t₂
 
     @[reducible]
-    def Total {α: Nat} {δ: Domain α} {τ: Ty} (op: PrimOp δ τ) (args: Args δ): Prop :=
+    def Total {α: Nat} {δ: Domain α} {τ: Ty} (op: PrimOp δ τ) (args: Values δ): Prop :=
       (Halts op args) ∧ True
 
     namespace Total
-      theorem halts {α: Nat} {δ: Domain α} {τ: Ty} {op: PrimOp δ τ} {args: Args δ}: Total op args → Halts op args
+      theorem halts {α: Nat} {δ: Domain α} {τ: Ty} {op: PrimOp δ τ} {args: Values δ}: Total op args → Halts op args
         | ⟨hh, _⟩ => hh
     end Total
   end PrimOp
@@ -51,6 +51,26 @@ namespace Total.Stlc.Lang.Annotated
         -- | .cond _ _ _,  _ => sorry
     end Total
   end Term
+
+  namespace Args
+    @[reducible]
+    def Halts {α: Nat} {δ: Domain α} (a₁: Args δ): Prop := ∃ a₂: Args δ, Eval a₁ a₂ ∧ IsValue a₂
+
+    @[reducible]
+    def Total {α: Nat} {δ: Domain α} (t: Args δ): Prop :=
+      (Halts t) ∧ (
+        match δ with
+          | _ => True
+      )
+
+    namespace IsValue
+      theorem halts {α: Nat} {δ: Domain α} {t: Args δ}: IsValue t → Halts t := sorry
+    end IsValue
+
+    namespace Total
+      theorem halts {α: Nat} {δ: Domain α}: {t: Args δ} → Total t → Halts t := sorry
+    end Total
+  end Args
 
   namespace Top
     @[reducible]
