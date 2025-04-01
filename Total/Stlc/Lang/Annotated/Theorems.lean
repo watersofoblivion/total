@@ -56,12 +56,36 @@ namespace Total.Stlc.Lang.Annotated
   end PrimOp
 
   mutual
-    theorem Term.Eval₁.deterministic {τ: Ty} {t t₁ t₂: Term τ}: Term.Eval₁ t t₁ → Term.Eval₁ t t₂ → t₁ = t₂ := sorry
+    theorem Term.Eval₁.deterministic {τ: Ty} {t t₁ t₂: Term τ}: Term.Eval₁ t t₁ → Term.Eval₁ t t₂ → t₁ = t₂
+      | .primOpArgs h₁, .primOpArgs h₂ => by rw [Args.Eval₁.deterministic h₁ h₂]
+      | .primOp h₁,     .primOp h₂     => by rw [PrimOp.Eval₁.deterministic h₁ h₂]
+
+      | .condTrue,  .condTrue  => rfl
+      | .condFalse, .condFalse => rfl
+      | .cond h₁,   .cond h₂   => by rw [Term.Eval₁.deterministic h₁ h₂]
+
+      | .primOpArgs h, .primOp _ => nomatch h
+      | .primOp _, .primOpArgs h => nomatch h
+
     theorem Args.Eval₁.deterministic {α: Nat} {δ: Domain α} {a a₁ a₂: Args δ}: Args.Eval₁ a a₁ → Args.Eval₁ a a₂ → a₁ = a₂ := sorry
   end
 
   mutual
-    theorem Term.Eval₁.progress {τ: Ty}: (t₁: Term τ) → Term.IsValue t₁ ∨ ∃ t₂: Term τ, Term.Eval₁ t₁ t₂ := sorry
+    theorem Term.Eval₁.progress {τ: Ty}: (t₁: Term τ) → Term.IsValue t₁ ∨ ∃ t₂: Term τ, Term.Eval₁ t₁ t₂ --:= sorry
+      | .value (.bool _) => .inl (.value (.bool _))
+      | .value (.nat  _) => .inl (.value (.nat  _))
+      | .primOp op args  =>
+        match Args.Eval₁.progress args with
+          | .inr ⟨_, e⟩       => .inr ⟨_, .primOpArgs e⟩
+          | .inl (.values vs) =>
+            have ⟨_, e, _⟩ := PrimOp.Eval₁.progress op vs
+            .inr ⟨_, .primOp e⟩
+      | .cond c _ _ =>
+        match Term.Eval₁.progress c with
+          | .inl (.value (.bool true))  => .inr ⟨_, .condTrue⟩
+          | .inl (.value (.bool false)) => .inr ⟨_, .condFalse⟩
+          | .inr ⟨_, e⟩                 => .inr ⟨_, .cond e⟩
+
     theorem Args.Eval₁.progress {α: Nat} {δ: Domain α}: (a₁: Args δ) → Args.IsValue a₁ ∨ ∃ a₂: Args δ, Args.Eval₁ a₁ a₂ := sorry
   end
 
@@ -77,7 +101,7 @@ namespace Total.Stlc.Lang.Annotated
 
   namespace Term
     namespace Eval
-      theorem progress {τ: Ty} {t₁: Term τ}: IsValue t₁ ∨ ∃ t₂: Term τ, Eval₁ t₁ t₂ := sorry
+      theorem progress {τ: Ty} {t₁: Term τ}: IsValue t₁ ∨ ∃ t₂: Term τ, Eval t₁ t₂ := sorry
 
       theorem preservesTotality {τ: Ty} {t₁ t₂: Term τ} (he: Eval t₁ t₂): Total t₁ ↔ Total t₂ := sorry
       theorem normalization {τ: Ty} {t: Term τ}: Halts t := sorry

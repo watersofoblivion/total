@@ -35,7 +35,7 @@ namespace Total.Stlc.Lang.Annotated
 
   mutual
     inductive Term.Eval₁: {τ: Ty} → Term τ → Term τ → Prop where
-      | primOpArgs {α: Nat} {δ: Domain α} {τ ρ: Ty} {op: PrimOp δ ρ} {args₁ args₂: Args δ} (h: Args.Eval₁ args₁ args₂): Term.Eval₁ (.primOp op args₁) (.primOp op args₂)
+      | primOpArgs {α: Nat} {δ: Domain α} {ρ: Ty} {op: PrimOp δ ρ} {args₁ args₂: Args δ} (h: Args.Eval₁ args₁ args₂): Term.Eval₁ (.primOp op args₁) (.primOp op args₂)
       | primOp {α: Nat} {δ: Domain α} {ρ: Ty} {op: PrimOp δ ρ} {vs: Values δ} {res: Term ρ} (h: PrimOp.Eval₁ op vs res): Term.Eval₁ (.primOp op (.values vs)) res
       | condTrue {τ: Ty} {t f: Term τ}: Term.Eval₁ (.cond (.value (.bool true)) t f) t
       | condFalse {τ: Ty} {t f: Term τ}: Term.Eval₁ (.cond (.value (.bool false)) t f) f
