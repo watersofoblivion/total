@@ -86,7 +86,24 @@ namespace Total.Stlc.Lang.Annotated
           | .inl (.value (.bool false)) => .inr ⟨_, .condFalse⟩
           | .inr ⟨_, e⟩                 => .inr ⟨_, .cond e⟩
 
-    theorem Args.Eval₁.progress {α: Nat} {δ: Domain α}: (a₁: Args δ) → Args.IsValue a₁ ∨ ∃ a₂: Args δ, Args.Eval₁ a₁ a₂ := sorry
+    theorem Args.Eval₁.progress {α: Nat} {δ: Domain α}: (a₁: Args δ) → Args.IsValue a₁ ∨ ∃ a₂: Args δ, Args.Eval₁ a₁ a₂ -- := sorry
+      | .terms (.cons t _)  =>
+        match Term.Eval₁.progress t with
+          | .inl (.value _) => .inr ⟨_, .termsConsValue⟩
+          | .inr ⟨_, e⟩     => .inr ⟨_, .termsCons e⟩
+      | .terms (.nil t)  =>
+        match Term.Eval₁.progress t with
+          | .inl (.value _) => .inr ⟨_, .termsNilValue⟩
+          | .inr ⟨_, e⟩     => .inr ⟨_, .termsNil e⟩
+      | .mix vs (.cons t _) =>
+        match Term.Eval₁.progress t with
+          | .inl (.value _) => .inr ⟨sorry, /- .mixConsValue -/ sorry⟩
+          | .inr ⟨_, e⟩     => .inr ⟨_, .mixCons e⟩
+      | .mix vs (.nil t) =>
+        match Term.Eval₁.progress t with
+          | .inl (.value _) => .inr ⟨_, .mixNilValue⟩
+          | .inr ⟨_, e⟩     => .inr ⟨_, .mixNil e⟩
+      | .values vs => .inl (.values vs)
   end
 
   mutual
@@ -101,7 +118,7 @@ namespace Total.Stlc.Lang.Annotated
 
   namespace Term
     namespace Eval
-      theorem progress {τ: Ty} {t₁: Term τ}: IsValue t₁ ∨ ∃ t₂: Term τ, Eval t₁ t₂ := sorry
+      theorem progress {τ: Ty}: {t₁: Term τ} → IsValue t₁ ∨ ∃ t₂: Term τ, Eval t₁ t₂ := sorry
 
       theorem preservesTotality {τ: Ty} {t₁ t₂: Term τ} (he: Eval t₁ t₂): Total t₁ ↔ Total t₂ := sorry
       theorem normalization {τ: Ty} {t: Term τ}: Halts t := sorry
