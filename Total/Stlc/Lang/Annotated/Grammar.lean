@@ -11,28 +11,24 @@ namespace Total.Stlc.Lang.Annotated
 
     inductive Domain: Nat → Type where
       | nil (τ: Ty): Domain 1
-      | cons {α: Nat} (τ: Ty) (rest: Domain α): Domain α.succ
+      | cons {α: Nat} (τ: Ty) (rest: Domain α): Domain (1 + α)
   end
 
-  @[reducible]
-  instance: {α β: Nat} → HAppend (Domain α) (Domain β) (Domain (β + α)) where
+  instance: {α β: Nat} → HAppend (Domain α) (Domain β) (Domain (α + β)) where
     hAppend lhs rhs :=
       append lhs rhs
       where
-        @[reducible]
-        append {α β: Nat}: Domain α → Domain β → Domain (β + α)
-          | .nil τ,       δ => .cons τ δ
-          | .cons τ rest, δ => .cons τ (append rest δ)
+        append {α β: Nat}: Domain α → Domain β → Domain (α + β)
+          | .nil τ,     δ₂ => Nat.add_comm _ _              ▸ .cons τ δ₂
+          | .cons τ δ₁, δ₂ => Eq.symm (Nat.add_assoc 1 _ _) ▸ .cons τ (append δ₁ δ₂)
 
-  @[reducible]
   instance: {α: Nat} → HAppend (Domain α) Ty (Domain (α + 1)) where
     hAppend lhs rhs :=
       append lhs rhs
       where
-        @[reducible]
         append {α: Nat}: Domain α → Ty → Domain (α + 1)
-          | .nil τ₁,       τ₂ => .cons τ₁ (.nil τ₂)
-          | .cons τ₁ rest, τ₂ => .cons τ₁ (append rest τ₂)
+          | .nil τ₁,    τ₂ => .cons τ₁ (.nil τ₂)
+          | .cons τ₁ δ, τ₂ => .cons τ₁ (append δ τ₂)
 
   inductive PrimOp: {α: Nat} → Domain α → Ty → Type where
     | and: PrimOp (.cons .bool (.nil .bool)) .bool
@@ -74,17 +70,6 @@ namespace Total.Stlc.Lang.Annotated
       | values {α: Nat} {δ: Domain α} (vs: Values δ): Args δ
   end
 
-  @[reducible]
-  instance: {α β: Nat} → {δ₁: Domain α} → {δ₂: Domain β} → HAppend (Values δ₁) (Values δ₂) (Values (δ₁ ++ δ₂)) where
-    hAppend lhs rhs :=
-      append lhs rhs
-      where
-        @[reducible]
-        append {α β: Nat} {δ₁: Domain α} {δ₂: Domain β}: Values δ₁ → Values δ₂ → Values (δ₁ ++ δ₂)
-          | .nil v,       vs => .cons v vs
-          | .cons v rest, vs => .cons v (append rest vs)
-
-  @[reducible]
   instance: {α: Nat} → {δ: Domain α} → {τ: Ty} → HAppend (Values δ) (Value τ) (Values (δ ++ τ)) where
     hAppend lhs rhs :=
       append lhs rhs

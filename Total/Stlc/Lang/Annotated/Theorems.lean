@@ -107,20 +107,41 @@ namespace Total.Stlc.Lang.Annotated
   end
 
   mutual
-    theorem Term.Eval₁.preservesHalting {τ: Ty} {t₁ t₂: Term τ} (he: Term.Eval₁ t₁ t₂): Term.Halts t₁ ↔ Term.Halts t₂ := sorry
-    theorem Args.Eval₁.preservesHalting {α: Nat} {δ: Domain α} {a₁ a₂: Args δ} (he: Args.Eval₁ a₁ a₂): Args.Halts a₁ ↔ Args.Halts a₂ := sorry
+    theorem Term.Eval₁.preservesHalting {τ: Ty} {t₁ t₂: Term τ} (he: Term.Eval₁ t₁ t₂): Term.Halts t₁ ↔ Term.Halts t₂ :=
+      ⟨mp he, mpr he⟩
+      where
+        mp  {τ: Ty} {t₁ t₂: Term τ} (he: Term.Eval₁ t₁ t₂): Term.Halts t₁ → Term.Halts t₂ := sorry
+        mpr {τ: Ty} {t₁ t₂: Term τ} (he: Term.Eval₁ t₁ t₂): Term.Halts t₂ → Term.Halts t₁ := sorry
+    theorem Args.Eval₁.preservesHalting {α: Nat} {δ: Domain α} {a₁ a₂: Args δ} (he: Args.Eval₁ a₁ a₂): Args.Halts a₁ ↔ Args.Halts a₂ :=
+      ⟨mp he, mpr he⟩
+      where
+        mp  {α: Nat} {δ: Domain α} {a₁ a₂: Args δ} (he: Args.Eval₁ a₁ a₂): Args.Halts a₁ → Args.Halts a₂ := sorry
+        mpr {α: Nat} {δ: Domain α} {a₁ a₂: Args δ} (he: Args.Eval₁ a₁ a₂): Args.Halts a₂ → Args.Halts a₁ := sorry
   end
 
   mutual
-    theorem Term.Eval₁.preservesTotality {τ: Ty} {t₁ t₂: Term τ} (he: Term.Eval₁ t₁ t₂): Term.Total t₁ ↔ Term.Total t₂ := sorry
-    theorem Args.Eval₁.preservesTotality {α: Nat} {δ: Domain α} {a₁ a₂: Args δ} (he: Args.Eval₁ a₁ a₂): Args.Total a₁ ↔ Args.Total a₂ := sorry
+    theorem Term.Eval₁.preservesTotality {τ: Ty} {t₁ t₂: Term τ} (he: Term.Eval₁ t₁ t₂): Term.Total t₁ ↔ Term.Total t₂ :=
+      ⟨mp he, mpr he⟩
+      where
+        mp  {τ: Ty} {t₁ t₂: Term τ} (he: Term.Eval₁ t₁ t₂): Term.Total t₁ → Term.Total t₂ := sorry
+        mpr {τ: Ty} {t₁ t₂: Term τ} (he: Term.Eval₁ t₁ t₂): Term.Total t₂ → Term.Total t₁ := sorry
+    theorem Args.Eval₁.preservesTotality {α: Nat} {δ: Domain α} {a₁ a₂: Args δ} (he: Args.Eval₁ a₁ a₂): Args.Total a₁ ↔ Args.Total a₂ :=
+      ⟨mp he, mpr he⟩
+      where
+        mp  {α: Nat} {δ: Domain α} {a₁ a₂: Args δ} (he: Args.Eval₁ a₁ a₂): Args.Total a₁ → Args.Total a₂ := sorry
+        mpr {α: Nat} {δ: Domain α} {a₁ a₂: Args δ} (he: Args.Eval₁ a₁ a₂): Args.Total a₂ → Args.Total a₁ := sorry
   end
 
   namespace Term
     namespace Eval
       theorem progress {τ: Ty}: {t₁: Term τ} → IsValue t₁ ∨ ∃ t₂: Term τ, Eval t₁ t₂ := sorry
 
-      theorem preservesTotality {τ: Ty} {t₁ t₂: Term τ} (he: Eval t₁ t₂): Total t₁ ↔ Total t₂ := sorry
+      theorem preservesTotality {τ: Ty} {t₁ t₂: Term τ} (he: Eval t₁ t₂): Total t₁ ↔ Total t₂ :=
+        ⟨mp he, mpr he⟩
+        where
+          mp  {τ: Ty} {t₁ t₂: Term τ} (he: Eval t₁ t₂): Total t₁ → Total t₂ := sorry
+          mpr {τ: Ty} {t₁ t₂: Term τ} (he: Eval t₁ t₂): Total t₂ → Total t₁ := sorry
+
       theorem normalization {τ: Ty} {t: Term τ}: Halts t := sorry
     end Eval
   end Term
@@ -130,14 +151,26 @@ namespace Total.Stlc.Lang.Annotated
       theorem deterministic {τ: Ty} {t t₁ t₂: Top τ}: Eval₁ t t₁ → Eval₁ t t₂ → t₁ = t₂ := sorry
       theorem progress {τ: Ty} {t₁: Top τ}: IsValue t₁ ∨ ∃ t₂: Top τ, Eval₁ t₁ t₂ := sorry
 
-      theorem preservesHalting {τ: Ty} {t₁ t₂: Top τ} (he: Eval₁ t₁ t₂): Halts t₁ ↔ Halts t₂ := sorry
-      theorem preservesTotality {τ: Ty} {t₁ t₂: Top τ} (he: Eval₁ t₁ t₂): Total τ t₁ ↔ Total τ t₂ := sorry
+      theorem preservesHalting {τ: Ty} {t₁ t₂: Top τ} (he: Eval₁ t₁ t₂): Halts t₁ ↔ Halts t₂ :=
+        ⟨mp he, mpr he⟩
+        where
+          mp  {τ: Ty} {t₁ t₂: Top τ} (he: Eval₁ t₁ t₂): Halts t₁ → Halts t₂ := sorry
+          mpr {τ: Ty} {t₁ t₂: Top τ} (he: Eval₁ t₁ t₂): Halts t₂ → Halts t₁ := sorry
+      theorem preservesTotality {τ: Ty} {t₁ t₂: Top τ} (he: Eval₁ t₁ t₂): Total τ t₁ ↔ Total τ t₂ :=
+        ⟨mp he, mpr he⟩
+        where
+          mp  {τ: Ty} {t₁ t₂: Top τ} (he: Eval₁ t₁ t₂): Total τ t₁ → Total τ t₂ := sorry
+          mpr {τ: Ty} {t₁ t₂: Top τ} (he: Eval₁ t₁ t₂): Total τ t₂ → Total τ t₁ := sorry
     end Eval₁
 
     namespace Eval
       theorem progress {τ: Ty} {t₁: Top τ}: IsValue t₁ ∨ ∃ t₂: Top τ, Eval t₁ t₂ := sorry
 
-      theorem preservesTotality {τ: Ty} {t₁ t₂: Top τ} (he: Eval t₁ t₂): Total τ t₁ ↔ Total τ t₂ := sorry
+      theorem preservesTotality {τ: Ty} {t₁ t₂: Top τ} (he: Eval t₁ t₂): Total τ t₁ ↔ Total τ t₂ :=
+        ⟨mp he, mpr he⟩
+        where
+          mp  {τ: Ty} {t₁ t₂: Top τ} (he: Eval t₁ t₂): Total τ t₁ → Total τ t₂ := sorry
+          mpr {τ: Ty} {t₁ t₂: Top τ} (he: Eval t₁ t₂): Total τ t₂ → Total τ t₁ := sorry
       theorem normalization {τ: Ty} {t: Top τ}: Halts t := sorry
     end Eval
   end Top

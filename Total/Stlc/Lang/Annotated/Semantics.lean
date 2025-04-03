@@ -42,14 +42,14 @@ namespace Total.Stlc.Lang.Annotated
       | cond {τ: Ty} {c₁ c₂: Term .bool} {t f: Term τ} (h: Term.Eval₁ c₁ c₂): Term.Eval₁ (.cond c₁ t f) (.cond c₂ t f)
 
     inductive Args.Eval₁: {α: Nat} → {δ: Domain α} → Args δ → Args δ → Prop where
-      | termsNil {τ: Ty} {t₁ t₂: Term τ} (h: Term.Eval₁ t₁ t₂): Args.Eval₁ (.terms (.nil t₁)) (.terms (.nil t₂))
-      | termsNilValue {τ: Ty} {v: Value τ}: Args.Eval₁ (.terms (.nil (.value v))) (.values (.nil v))
-      | termsCons {α: Nat} {δ: Domain α} {τ: Ty} {t₁ t₂: Term τ} {ts: Terms δ} (h: Term.Eval₁ t₁ t₂): Args.Eval₁ (.terms (.cons t₁ ts)) (.terms (.cons t₂ ts))
-      | termsConsValue {α: Nat} {δ: Domain α} {τ: Ty} {v: Value τ} {ts: Terms δ}: Args.Eval₁ (.terms (.cons (.value v) ts)) (.mix (Values.nil v) ts)
-      | mixNil {α: Nat} {δ: Domain α} {vs: Values δ} {τ: Ty} {t₁ t₂: Term τ} (h: Term.Eval₁ t₁ t₂): Args.Eval₁ (.mix vs (.nil t₁)) (.mix vs (.nil t₂))
-      | mixNilValue {α: Nat} {δ: Domain α} {vs: Values δ} {τ: Ty} {v: Value τ}: Args.Eval₁ (.mix vs (.nil (.value v))) (.values (vs ++ (Values.nil v)))
-      | mixCons {α β: Nat} {δ₁: Domain α} {δ₂: Domain β} {vs: Values δ₁} {τ: Ty} {t₁ t₂: Term τ} {ts: Terms δ₂} (h: Term.Eval₁ t₁ t₂): Args.Eval₁ (.mix vs (.cons t₁ ts)) (.mix vs (.cons t₂ ts))
-      -- | mixConsValue {α β: Nat} {δ₁: Domain α} {δ₂: Domain β} {τ: Ty} {vs: Values δ₁} {v: Value τ} {ts: Terms δ₂}: Args.Eval₁ (.mix vs (.cons (.value v) ts)) (.mix (vs ++ v) ts)
+      | termsNil {τ: Ty} {t₁ t₂: Term τ} (h: Term.Eval₁ t₁ t₂):                                                                        Args.Eval₁ (.terms (.nil t₁))              (.terms (.nil t₂))
+      | termsNilValue {τ: Ty} {v: Value τ}:                                                                                            Args.Eval₁ (.terms (.nil (.value v)))      (.values (.nil v))
+      | termsCons {α: Nat} {δ: Domain α} {τ: Ty} {t₁ t₂: Term τ} {ts: Terms δ} (h: Term.Eval₁ t₁ t₂):                                  Args.Eval₁ (.terms (.cons t₁ ts))          (.terms (.cons t₂ ts))
+      | termsConsValue {α: Nat} {δ: Domain α} {τ: Ty} {v: Value τ} {ts: Terms δ}:                                                      Args.Eval₁ (.terms (.cons (.value v) ts))  (.mix (.nil v) ts)
+      | mixNil {α: Nat} {δ: Domain α} {vs: Values δ} {τ: Ty} {t₁ t₂: Term τ} (h: Term.Eval₁ t₁ t₂):                                    Args.Eval₁ (.mix vs (.nil t₁))             (.mix vs (.nil t₂))
+      | mixNilValue {α: Nat} {δ: Domain α} {vs: Values δ} {τ: Ty} {v: Value τ}:                                                        Args.Eval₁ (.mix vs (.nil (.value v)))     (.values (vs ++ (Values.nil v)))
+      | mixCons {α β: Nat} {δ₁: Domain α} {δ₂: Domain β} {vs: Values δ₁} {τ: Ty} {t₁ t₂: Term τ} {ts: Terms δ₂} (h: Term.Eval₁ t₁ t₂): Args.Eval₁ (.mix vs (.cons t₁ ts))         (.mix vs (.cons t₂ ts))
+      | mixConsValue {α β: Nat} {δ₁: Domain α} {δ₂: Domain β} {τ: Ty} {vs: Values δ₁} {v: Value τ} {ts: Terms δ₂}:                  Args.Eval₁ (.mix vs (.cons (.value v) ts)) (.mix (vs ++ v) ts)
   end
 
   namespace Term
